@@ -1,0 +1,27 @@
+{
+  "name": "pyassess-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PyAssess - Secure Python Examination and Automatic Assessment Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@pyassess/api",
+    "dev:web": "npm run dev --workspace=@pyassess/web",
+    "dev:runner": "npm run dev --workspace=@pyassess/python-runner",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate --workspace=@pyassess/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace=@pyassess/api"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "typescript": "^5.4.5"
+  }
+}

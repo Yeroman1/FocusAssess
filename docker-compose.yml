@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pyassess-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: pyassess
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  python-runner:
+    build:
+      context: ./services/python-runner
+      dockerfile: Dockerfile
+    container_name: pyassess-python-runner
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      RUNNER_PORT: 5001
+      RUNNER_SECRET: dev-isolated-runner-secret-key-astu-2026
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: pyassess-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/pyassess?schema=public
+      PYTHON_RUNNER_URL: http://python-runner:5001
+      PYTHON_RUNNER_SECRET: dev-isolated-runner-secret-key-astu-2026
+      INITIAL_ADMIN_EMAIL: admin@astu.edu.et
+    depends_on:
+      postgres:
+        condition: service_healthy
+      python-runner:
+        condition: service_started
+
+volumes:
+  pgdata:
