@@ -1,0 +1,322 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  admin
+  instructor
+  student
+}
+
+enum AccountStatus {
+  active
+  suspended
+  pending_approval
+}
+
+enum ExamStatus {
+  draft
+  published
+  closed
+  archived
+}
+
+enum AttemptStatus {
+  in_progress
+  submitted
+  expired
+  terminated_suspicious
+}
+
+enum GradingStatus {
+  pending
+  grading
+  graded
+  failed
+}
+
+enum ReviewStatus {
+  none
+  pending_review
+  reviewed
+  reopened
+}
+
+enum ComparisonMode {
+  TRIMMED_TEXT
+  EXACT_TEXT
+  NUMERIC_TOLERANCE
+}
+
+enum GradingJobStatus {
+  pending
+  grading
+  graded
+  failed
+}
+
+enum EnrollmentStatus {
+  enrolled
+  completed
+  dropped
+}
+
+model Profile {
+  id        String        @id // Supabase Auth user UUID
+  email     String        @unique
+  fullName  String
+  role      Role          @default(student)
+  status    AccountStatus @default(active)
+  avatarUrl String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  ownedExams   Exam[]
+  enrollments  ClassEnrollment[]
+  attempts     ExamAttempt[]
+  auditActions AuditLog[]
+  examKeys     ExamKey[]
+  classes      Class[]
+}
+
+model Class {
+  id           String            @id @default(uuid())
+  name         String
+  code         String            @unique
+  description  String?
+  instructorId String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  instructor   Profile           @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  enrollments  ClassEnrollment[]
+  exams        ExamClass[]
+}
+
+model ClassEnrollment {
+  id        String           @id @default(uuid())
+  classId   String
+  studentId String
+  status    EnrollmentStatus @default(enrolled)
+  createdAt DateTime         @default(now())
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student Profile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+}
+
+model Exam {
+  id                 String     @id @default(uuid())
+  ownerId            String
+  title              String
+  description        String?
+  instructions       String?
+  durationMinutes    Int
+  availableFrom      DateTime?
+  availableUntil     DateTime?
+  status             ExamStatus @default(draft)
+  maxAttempts        Int        @default(1)
+  rules              String?    // JSON string
+  antiCheatingConfig String?    // JSON string
+  currentVersion     Int        @default(1)
+  resultsReleasedAt  DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  owner       Profile       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  versions    ExamVersion[]
+  keys        ExamKey[]
+  attempts    ExamAttempt[]
+  classes     ExamClass[]
+}
+
+model ExamClass {
+  id      String @id @default(uuid())
+  examId  String
+  classId String
+
+  exam  Exam  @relation(fields: [examId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, classId])
+}
+
+model ExamVersion {
+  id            String   @id @default(uuid())
+  examId        String
+  versionNumber Int
+  snapshotJson  String?  // Complete immutable snapshot of exam configuration
+  createdAt     DateTime @default(now())
+
+  exam      Exam          @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  ExamAttempt[]
+
+  @@unique([examId, versionNumber])
+}
+
+model Question {
+  id                   String      @id @default(uuid())
+  examVersionId        String
+  title                String
+  statement            String
+  inputDescription     String
+  outputDescription    String
+  constraints          String?
+  maxMarks             Float
+  position             Int
+  manualReviewRequired Boolean     @default(false)
+
+  examVersion ExamVersion     @relation(fields: [examVersionId], references: [id], onDelete: Cascade)
+  testCases   TestCase[]
+  answers     StudentAnswer[]
+
+  @@index([examVersionId, position])
+}
+
+model TestCase {
+  id             String         @id @default(uuid())
+  questionId     String
+  stdin          String
+  expectedOutput String
+  marks          Float
+  isHidden       Boolean        @default(true)
+  comparisonMode ComparisonMode @default(TRIMMED_TEXT)
+  position       Int
+  isEnabled      Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, position])
+}
+
+model ExamKey {
+  id        String    @id @default(uuid())
+  examId    String
+  keyHash   String    @unique
+  keyPrefix String
+  createdBy String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  revokedAt DateTime?
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  creator Profile @relation(fields: [createdBy], references: [id])
+}
+
+model ExamAttempt {
+  id                String        @id @default(uuid())
+  examId            String
+  examVersionId     String
+  studentId         String
+  status            AttemptStatus @default(in_progress)
+  startedAt         DateTime      @default(now())
+  deadlineAt        DateTime
+  submittedAt       DateTime?
+  terminatedAt      DateTime?
+  trustScore        Int           @default(100)
+  terminationReason String?
+  gradingStatus     GradingStatus @default(pending)
+  reviewStatus      ReviewStatus  @default(none)
+  totalMarksAwarded Float?
+  maxMarksTotal     Float?
+  percentageScore   Float?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  exam           Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  examVersion    ExamVersion     @relation(fields: [examVersionId], references: [id], onDelete: Cascade)
+  student        Profile         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers        StudentAnswer[]
+  events         ExamEvent[]
+  gradingJob     GradingJob?
+  gradingResults GradingResult[]
+
+  @@index([studentId, examId])
+}
+
+model StudentAnswer {
+  id                  String   @id @default(uuid())
+  attemptId           String
+  questionId          String
+  sourceCode          String
+  answerVersion       Int      @default(1)
+  savedAt             DateTime @default(now())
+  submittedSourceHash String?
+
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+}
+
+model ExamEvent {
+  id             String   @id @default(uuid())
+  attemptId      String
+  eventType      String
+  occurredAt     DateTime
+  receivedAt     DateTime @default(now())
+  durationMs     Int?
+  penalty        Int      @default(0)
+  metadata       String?
+  idempotencyKey String   @unique
+
+  attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId, occurredAt])
+}
+
+model GradingJob {
+  id             String           @id @default(uuid())
+  attemptId      String           @unique
+  status         GradingJobStatus @default(pending)
+  idempotencyKey String           @unique
+  startedAt      DateTime?
+  completedAt    DateTime?
+  errorCode      String?
+  createdAt      DateTime         @default(now())
+
+  attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
+
+model GradingResult {
+  id              String   @id @default(uuid())
+  attemptId       String
+  questionId      String
+  testCaseId      String
+  passed          Boolean
+  marksAwarded    Float
+  maxMarks        Float
+  executionStatus String
+  durationMs      Int
+  errorMessage    String?
+  createdAt       DateTime @default(now())
+
+  attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId, questionId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  reason     String?
+  metadata   String?  // JSON
+  createdAt  DateTime @default(now())
+
+  actor Profile @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+}
