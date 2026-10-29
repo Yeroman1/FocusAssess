@@ -3,10 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Navbar } from '@/components/Navbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { fetchWithAuth } from '@/lib/api';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function InstructorAttemptReviewPage() {
+  return (
+    <ProtectedRoute allowedRoles={['instructor', 'admin']}>
+      <InstructorAttemptReviewContent />
+    </ProtectedRoute>
+  );
+}
+
+function InstructorAttemptReviewContent() {
   const params = useParams();
   const attemptId = params.attemptId as string;
 
@@ -58,29 +67,26 @@ export default function InstructorAttemptReviewPage() {
   };
 
   return (
-    <>
-      <Navbar />
+    <DashboardLayout portalRole="instructor" title="Submission & Telemetry Adjudication" subtitle={`Attempt #${attemptId.slice(0, 8).toUpperCase()} • Comprehensive Proctoring Audit`}>
+      <div className="flex flex-col gap-5 sm:gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Link href="/instructor/dashboard" className="text-on-surface-variant hover:text-on-surface">
+              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            </Link>
+            <h1 className="text-lg sm:text-xl font-bold text-on-surface">Submission &amp; Telemetry Adjudication</h1>
+          </div>
 
-      <main className="flex-1 pt-20 pb-16 px-4 md:px-8 max-w-5xl mx-auto w-full">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/instructor/dashboard" className="text-on-surface-variant hover:text-on-surface">
-                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-              </Link>
-              <h1 className="text-xl font-bold text-on-surface">Submission &amp; Telemetry Adjudication</h1>
-            </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setShowReopenModal(true)}
-                className="px-3 py-1.5 rounded-xl bg-surface-container text-xs font-semibold text-secondary hover:bg-surface-container-high transition-colors"
+                className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-surface-container text-xs font-semibold text-secondary hover:bg-surface-container-high transition-colors text-center"
               >
                 Reopen Attempt
               </button>
               <button
                 onClick={() => setShowOverrideModal(true)}
-                className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
+                className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-slate-800 transition-colors text-center"
               >
                 Override Grade
               </button>
@@ -95,7 +101,7 @@ export default function InstructorAttemptReviewPage() {
           )}
 
           {/* Candidate Overview Card */}
-          <div className="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high/60 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <span className="text-[10px] uppercase font-mono text-on-surface-variant block">Candidate Profile</span>
               <span className="text-sm font-bold text-on-surface block mt-0.5">{attempt?.student?.fullName}</span>
@@ -148,7 +154,6 @@ export default function InstructorAttemptReviewPage() {
             </div>
           </section>
         </div>
-      </main>
 
       {/* Reopen Modal */}
       {showReopenModal && (
@@ -237,6 +242,6 @@ export default function InstructorAttemptReviewPage() {
           </form>
         </div>
       )}
-    </>
+    </DashboardLayout>
   );
 }

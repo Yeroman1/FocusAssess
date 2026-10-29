@@ -3,223 +3,308 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/Navbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { fetchWithAuth } from '@/lib/api';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function CreateExamPage() {
-  const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [durationMinutes, setDurationMinutes] = useState(90);
-  const [instructions, setInstructions] = useState('');
-  const [qTitle, setQTitle] = useState('');
-  const [qStatement, setQStatement] = useState('');
-  const [qMarks, setQMarks] = useState(25);
-  const [tcInput, setTcInput] = useState('');
-  const [tcOutput, setTcOutput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdKey, setCreatedKey] = useState<string | null>(null);
+  return (
+    <ProtectedRoute allowedRoles={['instructor', 'admin']}>
+      <CreateExamContent />
+    </ProtectedRoute>
+  );
+}
 
-  const handleCreateAndPublish = async (e: React.FormEvent) => {
+function CreateExamContent() {
+  const router = useRouter();
+
+  // Step 1: Exam Basic Specifications
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState(90);
+  const [availableFrom, setAvailableFrom] = useState('');
+  const [instructions, setInstructions] = useState('');
+  const [maxAttempts, setMaxAttempts] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleSubmitStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg(null);
 
     try {
-      // 1. Create exam
-      const examRes = await fetchWithAuth('/exams', {
+      if (!title.trim()) {
+        throw new Error('Please provide an assessment title.');
+      }
+      if (durationMinutes < 5 || durationMinutes > 300) {
+        throw new Error('Duration must be between 5 and 300 minutes.');
+      }
+
+      // Format ISO start date if specified
+      let formattedStart: string | undefined = undefined;
+      if (availableFrom && availableFrom.trim() !== '') {
+        const parsedDate = new Date(availableFrom);
+        if (!isNaN(parsedDate.getTime())) {
+          formattedStart = parsedDate.toISOString();
+        }
+      }
+
+      const res = await fetchWithAuth('/exams', {
         method: 'POST',
         body: JSON.stringify({
-          title,
+          title: title.trim(),
+          description: description.trim() || undefined,
           durationMinutes: Number(durationMinutes),
-          instructions,
+          availableFrom: formattedStart,
+          instructions: instructions.trim() || undefined,
+          maxAttempts: Number(maxAttempts) || 1,
         }),
       });
 
-      const examId = examRes.exam.id;
+      const examId = res?.exam?.id;
+      if (!examId) {
+        throw new Error('Failed to retrieve created exam identifier.');
+      }
 
-      // 2. Add Question
-      const qRes = await fetchWithAuth(`/exams/${examId}/questions`, {
-        method: 'POST',
-        body: JSON.stringify({
-          title: qTitle,
-          statement: qStatement,
-          maxMarks: Number(qMarks),
-          position: 1,
-        }),
-      });
-
-      // 3. Add Test Case
-      await fetchWithAuth(`/questions/${qRes.question.id}/test-cases`, {
-        method: 'POST',
-        body: JSON.stringify({
-          stdin: tcInput,
-          expectedOutput: tcOutput,
-          marks: Number(qMarks),
-          isHidden: false,
-          position: 1,
-        }),
-      });
-
-      // 4. Publish Exam & Generate Secure Key
-      const pubRes = await fetchWithAuth(`/exams/${examId}/publish`, {
-        method: 'POST',
-      });
-
-      setCreatedKey(pubRes.examKey);
+      // Direct to Step 2: Dynamic Question Builder page
+      router.push(`/instructor/exams/${examId}/builder`);
     } catch (err: any) {
-      alert(`Error creating exam: ${err.message || 'Operation failed'}`);
+      console.error('Error creating exam:', err);
+      setErrorMsg(err.message || 'Failed to initialize examination.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <>
-      <Navbar />
+    <DashboardLayout
+      portalRole="instructor"
+      title="Create New Examination"
+      subtitle="Step 1: Basic Specifications, Scheduling & Student Message"
+    >
+      <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full pb-16">
+        {/* Navigation Breadcrumb */}
+        <div className="flex items-center gap-2">
+          <Link
+            href="/instructor/dashboard"
+            className="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+            title="Return to Instructor Dashboard"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+          </Link>
+          <span className="text-xs font-mono uppercase tracking-wider text-on-surface-variant">
+            Instructor Console / Examinations / New
+          </span>
+        </div>
 
-      <main className="flex-1 pt-20 pb-16 px-4 md:px-8 max-w-3xl mx-auto w-full">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-2">
-            <Link href="/instructor/dashboard" className="text-on-surface-variant hover:text-on-surface">
-              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-            </Link>
-            <h1 className="text-xl font-bold text-on-surface">Configure New Python Examination</h1>
-          </div>
-
-          {createdKey ? (
-            <div className="bg-surface-container-lowest p-6 rounded-2xl border border-tertiary-fixed shadow-sm space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-on-tertiary-container text-white flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[24px]">key</span>
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-on-surface">Examination Published Successfully</h2>
-                  <p className="text-xs text-on-surface-variant">Distribute the secure cryptographic token to eligible students.</p>
-                </div>
+        {/* Multi-Step Visual Progress Stepper */}
+        <div className="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container-high/60 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Step 1: Active */}
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-primary/5 border border-primary/20">
+              <div className="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-xs font-mono shadow-sm">
+                1
               </div>
-
-              <div className="p-4 bg-surface-container-low rounded-xl text-center space-y-1">
-                <span className="text-[10px] uppercase font-mono text-on-surface-variant">Generated Access Token</span>
-                <div className="text-2xl font-mono font-bold text-secondary tracking-widest select-all">{createdKey}</div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Link
-                  href="/instructor/dashboard"
-                  className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold"
-                >
-                  Return to Dashboard
-                </Link>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-primary leading-tight truncate">
+                  Exam Details
+                </span>
+                <span className="text-[10px] text-on-surface-variant font-mono">Title & Schedule</span>
               </div>
             </div>
-          ) : (
-            <form onSubmit={handleCreateAndPublish} className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-5">
-              <div className="space-y-4">
-                <h2 className="text-sm font-bold text-on-surface uppercase font-mono tracking-wider">1. Basic Specification</h2>
 
-                <div>
-                  <label className="text-xs font-medium text-on-surface block mb-1">Assessment Title</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. CS204 Advanced Algorithmic Midterm"
-                    className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-secondary border border-surface-container-high"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-on-surface block mb-1">Duration (Minutes)</label>
-                    <input
-                      type="number"
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                      className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs font-mono text-on-surface focus:outline-none focus:ring-1 focus:ring-secondary border border-surface-container-high"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-on-surface block mb-1">Python Version</label>
-                    <input
-                      type="text"
-                      disabled
-                      value="Python 3.12 (Strict Sandbox)"
-                      className="w-full h-10 px-3 bg-surface-container rounded-xl text-xs font-mono text-on-surface-variant border border-surface-container-high"
-                    />
-                  </div>
-                </div>
+            {/* Step 2: Next */}
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-low border border-surface-container-high opacity-70">
+              <div className="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center font-bold text-xs font-mono">
+                2
               </div>
-
-              <div className="space-y-4 pt-4 border-t border-surface-container-high">
-                <h2 className="text-sm font-bold text-on-surface uppercase font-mono tracking-wider">2. Primary Question Setup</h2>
-
-                <div>
-                  <label className="text-xs font-medium text-on-surface block mb-1">Question Title</label>
-                  <input
-                    type="text"
-                    value={qTitle}
-                    onChange={(e) => setQTitle(e.target.value)}
-                    className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs text-on-surface border border-surface-container-high"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-on-surface block mb-1">Problem Statement</label>
-                  <textarea
-                    value={qStatement}
-                    onChange={(e) => setQStatement(e.target.value)}
-                    rows={3}
-                    className="w-full p-3 bg-surface-container-low rounded-xl text-xs text-on-surface border border-surface-container-high focus:outline-none focus:ring-1 focus:ring-secondary resize-none"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-on-surface block mb-1">Test Stdin</label>
-                    <input
-                      type="text"
-                      value={tcInput}
-                      onChange={(e) => setTcInput(e.target.value)}
-                      className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs font-mono text-on-surface border border-surface-container-high"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-on-surface block mb-1">Expected Output</label>
-                    <input
-                      type="text"
-                      value={tcOutput}
-                      onChange={(e) => setTcOutput(e.target.value)}
-                      className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs font-mono text-on-surface border border-surface-container-high"
-                      required
-                    />
-                  </div>
-                </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-semibold text-on-surface leading-tight truncate">
+                  Question Builder
+                </span>
+                <span className="text-[10px] text-on-surface-variant font-mono">Python Code & Output</span>
               </div>
+            </div>
 
-              <div className="pt-4 border-t border-surface-container-high flex justify-end gap-3">
-                <Link
-                  href="/instructor/dashboard"
-                  className="px-4 h-11 rounded-xl bg-surface-container text-xs font-medium text-on-surface flex items-center justify-center hover:bg-surface-container-high"
-                >
-                  Cancel
-                </Link>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 h-11 rounded-xl bg-primary text-white text-xs font-semibold flex items-center justify-center gap-2 hover:bg-slate-800 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Publishing...' : 'Publish & Generate Token'}
-                </button>
+            {/* Step 3: Upcoming */}
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-low border border-surface-container-high opacity-70">
+              <div className="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface-variant flex items-center justify-center font-bold text-xs font-mono">
+                3
               </div>
-            </form>
-          )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-semibold text-on-surface leading-tight truncate">
+                  Publish & Token
+                </span>
+                <span className="text-[10px] text-on-surface-variant font-mono">Access Distribution</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-    </>
+
+        {/* Error notification alert */}
+        {errorMsg && (
+          <div className="p-4 rounded-xl bg-error-container/30 border border-error/30 text-error flex items-center gap-3 text-xs">
+            <span className="material-symbols-outlined text-[20px] flex-shrink-0">error</span>
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Step 1 Form: Exam Specifications */}
+        <form
+          onSubmit={handleSubmitStep1}
+          className="bg-surface-container-lowest p-5 sm:p-7 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-6"
+        >
+          <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
+            <div>
+              <h2 className="text-sm font-bold text-on-surface uppercase font-mono tracking-wider">
+                1. Assessment Specifications
+              </h2>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Define the core title, duration, schedule, and candidate instructions.
+              </p>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-[11px] font-mono font-bold">
+              Python 3.12 Runtime
+            </span>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="text-xs font-bold text-on-surface block mb-1.5">
+              Assessment Title <span className="text-error">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. CS204 Advanced Algorithmic Midterm Examination"
+              className="w-full h-11 px-3.5 bg-surface-container-low rounded-xl text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 border border-surface-container-high transition-all"
+              required
+            />
+            <p className="text-[11px] text-on-surface-variant font-mono mt-1">
+              Descriptive title displayed on candidate dashboards and proctoring logs.
+            </p>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="text-xs font-bold text-on-surface block mb-1.5">
+              Assessment Description <span className="text-on-surface-variant font-normal font-mono">(Optional)</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="e.g. Comprehensive evaluation of dynamic programming, binary search trees, and algorithmic complexity in Python."
+              className="w-full p-3 bg-surface-container-low rounded-xl text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 border border-surface-container-high resize-none transition-all"
+            />
+            <p className="text-[11px] text-on-surface-variant font-mono mt-1">
+              Outlines the assessment scope, topics covered, and evaluation criteria.
+            </p>
+          </div>
+
+          {/* Duration & Start Time Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-on-surface block mb-1.5">
+                Duration (Minutes) <span className="text-error">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={5}
+                  max={300}
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                  className="w-full h-11 px-3.5 bg-surface-container-low rounded-xl text-xs font-mono font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 border border-surface-container-high transition-all"
+                  required
+                />
+                <span className="absolute right-3.5 top-3 text-[11px] font-mono text-on-surface-variant pointer-events-none">
+                  mins
+                </span>
+              </div>
+              <p className="text-[11px] text-on-surface-variant font-mono mt-1">
+                Standard duration is 60 to 120 minutes.
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-on-surface block mb-1.5">
+                When it Starts <span className="text-on-surface-variant font-normal font-mono">(Optional)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={availableFrom}
+                onChange={(e) => setAvailableFrom(e.target.value)}
+                className="w-full h-11 px-3.5 bg-surface-container-low rounded-xl text-xs font-mono text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 border border-surface-container-high transition-all"
+              />
+              <p className="text-[11px] text-on-surface-variant font-mono mt-1">
+                Leave blank for on-demand exams starting immediately upon token access.
+              </p>
+            </div>
+          </div>
+
+          {/* Message to Students / Instructions */}
+          <div>
+            <label className="text-xs font-bold text-on-surface block mb-1.5">
+              Message to Students / Exam Instructions <span className="text-on-surface-variant font-normal font-mono">(Optional)</span>
+            </label>
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={4}
+              placeholder="e.g. Welcome candidates. Please read each problem carefully. Write idiomatic Python 3 code. Tab switching and copy-pasting are strictly monitored by the proctoring kernel. Good luck!"
+              className="w-full p-3 bg-surface-container-low rounded-xl text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 border border-surface-container-high resize-none transition-all"
+            />
+            <p className="text-[11px] text-on-surface-variant font-mono mt-1">
+              Presented to students on the pre-exam instruction screen and pinned in the assessment sidebar.
+            </p>
+          </div>
+
+          {/* Sandbox & Runtime Information Card */}
+          <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary flex-shrink-0">
+                <span className="material-symbols-outlined text-[20px]">terminal</span>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-on-surface block">
+                  Isolated Python Execution Sandbox
+                </span>
+                <span className="text-[11px] text-on-surface-variant font-mono">
+                  Python 3.12 • Subprocess Jail • Memory & CPU Constraints
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                Ready for Question Setup
+              </span>
+            </div>
+          </div>
+
+          {/* Form Action Buttons */}
+          <div className="pt-4 border-t border-surface-container-high flex flex-col-reverse sm:flex-row justify-between items-center gap-3">
+            <Link
+              href="/instructor/dashboard"
+              className="w-full sm:w-auto px-5 h-11 rounded-xl bg-surface-container text-xs font-semibold text-on-surface flex items-center justify-center hover:bg-surface-container-high transition-colors"
+            >
+              Cancel
+            </Link>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-7 h-11 rounded-xl bg-primary text-white text-xs font-semibold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all shadow-sm disabled:opacity-50 active:scale-95"
+            >
+              <span>{isSubmitting ? 'Creating Draft Exam...' : 'Save & Continue to Question Builder'}</span>
+              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </DashboardLayout>
   );
 }

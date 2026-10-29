@@ -2,17 +2,27 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { fetchWithAuth } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function InstructorDashboardPage() {
+  return (
+    <ProtectedRoute allowedRoles={['instructor', 'admin']}>
+      <InstructorDashboardContent />
+    </ProtectedRoute>
+  );
+}
+
+function InstructorDashboardContent() {
   const { user, profile } = useAuth();
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [exams, setExams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (!user?.id) return;
     let mounted = true;
     setIsLoading(true);
 
@@ -38,18 +48,15 @@ export default function InstructorDashboardPage() {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user?.id]);
 
   return (
-    <>
-      <Navbar />
-
-      <main className="flex-1 pt-20 pb-16 px-4 md:px-8 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col gap-6">
+    <DashboardLayout portalRole="instructor" title="Instructor Exam Console" subtitle="Manage examinations, test-cases, and anti-cheating telemetry">
+      <div className="flex flex-col gap-6">
           {/* Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-on-surface">Instructor Command Center</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-on-surface">Instructor Command Center</h1>
               <p className="text-xs text-on-surface-variant mt-0.5">
                 Manage examinations, security keys, student monitoring, and automatic test-case grading.
               </p>
@@ -57,7 +64,7 @@ export default function InstructorDashboardPage() {
 
             <Link
               href="/instructor/exams/create"
-              className="h-10 px-4 bg-primary text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 self-start sm:self-auto hover:bg-slate-800 transition-colors shadow-sm"
+              className="w-full sm:w-auto h-10 px-4 bg-primary text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-800 transition-colors shadow-sm"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
               <span>Create Examination</span>
@@ -65,40 +72,40 @@ export default function InstructorDashboardPage() {
           </div>
 
           {/* Quick Metrics 4-Up Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
               <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Total Examinations</span>
-              <span className="text-2xl font-bold text-on-surface mt-1 block">
+              <span className="text-xl sm:text-2xl font-bold text-on-surface mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.totalExams ?? exams.length)}
               </span>
             </div>
 
-            <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
               <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Published Active</span>
-              <span className="text-2xl font-bold text-secondary mt-1 block">
+              <span className="text-xl sm:text-2xl font-bold text-secondary mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.publishedExams ?? 0)}
               </span>
             </div>
 
-            <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
               <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Live In-Progress</span>
-              <span className="text-2xl font-bold text-on-tertiary-container mt-1 block">
+              <span className="text-xl sm:text-2xl font-bold text-on-tertiary-container mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.activeAttempts ?? 0)}
               </span>
             </div>
 
-            <div className="p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
               <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Flagged For Review</span>
-              <span className="text-2xl font-bold text-error mt-1 block">
+              <span className="text-xl sm:text-2xl font-bold text-error mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.flaggedAttempts ?? 0)}
               </span>
             </div>
           </div>
 
           {/* Examination Roster */}
-          <section className="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container-high/60 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-on-surface">Your Examinations</h2>
+          <section id="exams" className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-on-surface">Your Examinations</h2>
               <span className="text-xs font-mono text-on-surface-variant">{exams.length} Configured</span>
             </div>
 
@@ -107,7 +114,7 @@ export default function InstructorDashboardPage() {
                 {exams.map((ex) => (
                   <div key={ex.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-sm font-semibold text-on-surface">{ex.title}</h3>
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
@@ -119,10 +126,10 @@ export default function InstructorDashboardPage() {
                           {ex.status}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-on-surface-variant font-mono">
+                      <div className="flex items-center gap-2 sm:gap-3 text-xs text-on-surface-variant font-mono flex-wrap">
                         <span>{ex.durationMinutes} Minutes</span>
                         <span>•</span>
-                        <span>{ex._count?.attempts ?? 0} Candidate Submissions</span>
+                        <span>{ex._count?.attempts ?? 0} Submissions</span>
                         {ex.keys?.[0] && (
                           <>
                             <span>•</span>
@@ -132,13 +139,23 @@ export default function InstructorDashboardPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/student/exams/${ex.id}/instructions`}
-                        className="px-3 py-1.5 rounded-lg bg-surface-container text-xs font-medium text-on-surface hover:bg-surface-container-high transition-colors"
-                      >
-                        Preview Instructions
-                      </Link>
+                    <div className="w-full sm:w-auto flex items-center gap-2 pt-1 sm:pt-0">
+                      {ex.status === 'draft' ? (
+                        <Link
+                          href={`/instructor/exams/${ex.id}/builder`}
+                          className="w-full sm:w-auto text-center px-3.5 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">edit_note</span>
+                          <span>Question Builder</span>
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/student/exams/${ex.id}/instructions`}
+                          className="w-full sm:w-auto text-center px-3.5 py-1.5 rounded-lg bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors"
+                        >
+                          Preview Instructions
+                        </Link>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -160,17 +177,17 @@ export default function InstructorDashboardPage() {
 
           {/* Recent Submissions & Flagged Review List */}
           {dashboardData?.recentSubmissions && dashboardData.recentSubmissions.length > 0 && (
-            <section className="bg-surface-container-lowest rounded-2xl p-5 border border-surface-container-high/60 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-on-surface">Recent Student Attempts</h2>
+            <section id="submissions" className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-sm sm:text-base font-bold text-on-surface">Recent Student Attempts</h2>
                 <span className="text-xs font-mono text-on-surface-variant">Live Telemetry</span>
               </div>
 
               <div className="divide-y divide-surface-container-high">
                 {dashboardData.recentSubmissions.map((att: any) => (
-                  <div key={att.id} className="py-3 flex items-center justify-between gap-3">
+                  <div key={att.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-on-surface">
                           {att.student?.fullName || att.student?.email || 'Student'}
                         </span>
@@ -184,14 +201,14 @@ export default function InstructorDashboardPage() {
                           Trust: {att.trustScore}%
                         </span>
                       </div>
-                      <span className="text-xs text-on-surface-variant font-mono">
+                      <span className="text-xs text-on-surface-variant font-mono mt-0.5 block">
                         {att.exam?.title} • Status: {att.status}
                       </span>
                     </div>
 
                     <Link
                       href={`/instructor/attempts/${att.id}`}
-                      className="px-3 py-1.5 rounded-lg bg-surface-container text-xs font-medium text-on-surface hover:bg-surface-container-high transition-colors"
+                      className="w-full sm:w-auto text-center px-3.5 py-1.5 rounded-lg bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high transition-colors"
                     >
                       Audit Telemetry
                     </Link>
@@ -201,7 +218,6 @@ export default function InstructorDashboardPage() {
             </section>
           )}
         </div>
-      </main>
-    </>
+    </DashboardLayout>
   );
 }
