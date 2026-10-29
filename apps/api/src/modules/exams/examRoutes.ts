@@ -9,21 +9,31 @@ const router = Router();
 
 const CreateExamSchema = z.object({
   title: z.string().min(3),
-  description: z.string().optional(),
-  instructions: z.string().optional(),
+  description: z.string().optional().nullable(),
+  instructions: z.string().optional().nullable(),
   durationMinutes: z.number().int().min(5).max(300),
-  availableFrom: z.string().datetime().optional(),
-  availableUntil: z.string().datetime().optional(),
+  availableFrom: z.string().optional().nullable().transform((val) => (val && val.trim() !== '' ? new Date(val).toISOString() : undefined)),
+  availableUntil: z.string().optional().nullable().transform((val) => (val && val.trim() !== '' ? new Date(val).toISOString() : undefined)),
   maxAttempts: z.number().int().min(1).default(1),
   rules: z.any().optional(),
 });
 
+const UpdateExamSchema = z.object({
+  title: z.string().min(3).optional(),
+  description: z.string().optional().nullable(),
+  instructions: z.string().optional().nullable(),
+  durationMinutes: z.number().int().min(5).max(300).optional(),
+  availableFrom: z.string().optional().nullable().transform((val) => (val && val.trim() !== '' ? new Date(val).toISOString() : undefined)),
+  availableUntil: z.string().optional().nullable().transform((val) => (val && val.trim() !== '' ? new Date(val).toISOString() : undefined)),
+  maxAttempts: z.number().int().min(1).optional(),
+});
+
 const CreateQuestionSchema = z.object({
   title: z.string().min(2),
-  statement: z.string().min(5),
+  statement: z.string().min(3),
   inputDescription: z.string().default(''),
   outputDescription: z.string().default(''),
-  constraints: z.string().optional(),
+  constraints: z.string().optional().nullable(),
   maxMarks: z.number().positive(),
   position: z.number().int().default(1),
   manualReviewRequired: z.boolean().default(false),
@@ -32,10 +42,28 @@ const CreateQuestionSchema = z.object({
 const CreateTestCaseSchema = z.object({
   stdin: z.string().default(''),
   expectedOutput: z.string(),
-  marks: z.number().positive(),
+  marks: z.number().min(0),
   isHidden: z.boolean().default(true),
   comparisonMode: z.enum(['TRIMMED_TEXT', 'EXACT_TEXT', 'NUMERIC_TOLERANCE']).default('TRIMMED_TEXT'),
   position: z.number().int().default(1),
+});
+
+const CreateQuestionWithTestCasesSchema = z.object({
+  title: z.string().min(2),
+  statement: z.string().min(3),
+  inputDescription: z.string().default(''),
+  outputDescription: z.string().default(''),
+  constraints: z.string().optional().nullable(),
+  maxMarks: z.number().positive(),
+  position: z.number().int().default(1),
+  manualReviewRequired: z.boolean().default(false),
+  testCases: z.array(z.object({
+    stdin: z.string().default(''),
+    expectedOutput: z.string(),
+    marks: z.number().min(0),
+    isHidden: z.boolean().default(false),
+    comparisonMode: z.enum(['TRIMMED_TEXT', 'EXACT_TEXT', 'NUMERIC_TOLERANCE']).default('TRIMMED_TEXT'),
+  })).min(1, 'At least one testcase is required'),
 });
 
 // List exams
@@ -156,6 +184,28 @@ router.get('/:examId', requireAuth, async (req: AuthenticatedRequest, res: Respo
   return res.json({ exam });
 });
 
+// Update draft exam
+router.patch('/:examId', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const parseResult = UpdateExamSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Validation failed', details: parseResult.error.flatten() });
+  }
+
+  const exam = await ExamService.updateExam(req.params.examId, req.user!.id, parseResult.data);
+  return res.json({ exam });
+});
+
+// Add question with test cases atomically
+router.post('/:examId/questions-with-testcases', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const parseResult = CreateQuestionWithTestCasesSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Validation failed', details: parseResult.error.flatten() });
+  }
+
+  const question = await ExamService.addQuestionWithTestCases(req.params.examId, req.user!.id, parseResult.data);
+  return res.status(201).json({ question });
+});
+
 // Add question to exam
 router.post('/:examId/questions', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
   const parseResult = CreateQuestionSchema.safeParse(req.body);
@@ -167,8 +217,30 @@ router.post('/:examId/questions', requireAuth, requireRole(['instructor', 'admin
   return res.status(201).json({ question });
 });
 
+// Delete question from exam
+router.delete('/:examId/questions/:questionId', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  await ExamService.deleteQuestion(req.params.questionId, req.user!.id);
+  return res.json({ success: true, message: 'Question deleted' });
+});
+
+// Also allow delete question via /questions/:questionId
+router.delete('/questions/:questionId', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  await ExamService.deleteQuestion(req.params.questionId, req.user!.id);
+  return res.json({ success: true, message: 'Question deleted' });
+});
+
 // Add test case to question
 router.post('/questions/:questionId/test-cases', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const parseResult = CreateTestCaseSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Validation failed', details: parseResult.error.flatten() });
+  }
+
+  const testCase = await ExamService.addTestCase(req.params.questionId, req.user!.id, parseResult.data);
+  return res.status(201).json({ testCase });
+});
+
+router.post('/:examId/questions/:questionId/test-cases', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
   const parseResult = CreateTestCaseSchema.safeParse(req.body);
   if (!parseResult.success) {
     return res.status(400).json({ error: 'Validation failed', details: parseResult.error.flatten() });

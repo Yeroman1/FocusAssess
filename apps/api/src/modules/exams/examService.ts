@@ -5,11 +5,11 @@ import { ExamStatus, OutputComparisonMode } from '@pyassess/shared';
 
 export interface CreateExamDTO {
   title: string;
-  description?: string;
-  instructions?: string;
+  description?: string | null;
+  instructions?: string | null;
   durationMinutes: number;
-  availableFrom?: Date | string;
-  availableUntil?: Date | string;
+  availableFrom?: Date | string | null;
+  availableUntil?: Date | string | null;
   maxAttempts?: number;
   rules?: any;
   antiCheatingConfig?: any;
@@ -20,7 +20,7 @@ export interface CreateQuestionDTO {
   statement: string;
   inputDescription: string;
   outputDescription: string;
-  constraints?: string;
+  constraints?: string | null;
   maxMarks: number;
   position: number;
   manualReviewRequired?: boolean;
@@ -33,6 +33,16 @@ export interface CreateTestCaseDTO {
   isHidden?: boolean;
   comparisonMode?: OutputComparisonMode;
   position: number;
+}
+
+export interface CreateQuestionWithTestCasesDTO extends CreateQuestionDTO {
+  testCases: Array<{
+    stdin: string;
+    expectedOutput: string;
+    marks: number;
+    isHidden?: boolean;
+    comparisonMode?: OutputComparisonMode;
+  }>;
 }
 
 /**
@@ -94,6 +104,106 @@ export class ExamService {
     });
 
     return exam;
+  }
+
+  /**
+   * Update draft exam details
+   */
+  static async updateExam(examId: string, instructorId: string, dto: Partial<CreateExamDTO>) {
+    const exam = await prisma.exam.findUnique({ where: { id: examId } });
+    if (!exam) throw new Error('Exam not found');
+    if (exam.ownerId !== instructorId) throw new Error('Forbidden: You do not own this exam');
+    if (exam.status !== 'draft') throw new Error('Cannot edit a published or closed exam');
+
+    return await prisma.exam.update({
+      where: { id: examId },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.instructions !== undefined && { instructions: dto.instructions }),
+        ...(dto.durationMinutes !== undefined && { durationMinutes: dto.durationMinutes }),
+        ...(dto.availableFrom !== undefined && { availableFrom: dto.availableFrom ? new Date(dto.availableFrom) : null }),
+        ...(dto.availableUntil !== undefined && { availableUntil: dto.availableUntil ? new Date(dto.availableUntil) : null }),
+        ...(dto.maxAttempts !== undefined && { maxAttempts: dto.maxAttempts }),
+      },
+    });
+  }
+
+  /**
+   * Add question with test cases atomically in a single transaction
+   */
+  static async addQuestionWithTestCases(examId: string, instructorId: string, dto: CreateQuestionWithTestCasesDTO) {
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } },
+    });
+
+    if (!exam) throw new Error('Exam not found');
+    if (exam.ownerId !== instructorId) throw new Error('Forbidden: You do not own this exam');
+    if (exam.status !== 'draft') throw new Error('Cannot add questions to a published or closed exam');
+
+    const currentVersion = exam.versions[0];
+    if (!currentVersion) throw new Error('Exam version not found');
+
+    return await prisma.$transaction(async (tx) => {
+      const question = await tx.question.create({
+        data: {
+          examVersionId: currentVersion.id,
+          title: dto.title,
+          statement: dto.statement,
+          inputDescription: dto.inputDescription || '',
+          outputDescription: dto.outputDescription || '',
+          constraints: dto.constraints || null,
+          maxMarks: dto.maxMarks,
+          position: dto.position,
+          manualReviewRequired: dto.manualReviewRequired ?? false,
+        },
+      });
+
+      if (dto.testCases && dto.testCases.length > 0) {
+        for (let i = 0; i < dto.testCases.length; i++) {
+          const tc = dto.testCases[i];
+          await tx.testCase.create({
+            data: {
+              questionId: question.id,
+              stdin: tc.stdin || '',
+              expectedOutput: tc.expectedOutput,
+              marks: tc.marks,
+              isHidden: tc.isHidden ?? false,
+              comparisonMode: (tc.comparisonMode as any) || 'TRIMMED_TEXT',
+              position: i + 1,
+              isEnabled: true,
+            },
+          });
+        }
+      }
+
+      return await tx.question.findUnique({
+        where: { id: question.id },
+        include: { testCases: { orderBy: { position: 'asc' } } },
+      });
+    });
+  }
+
+  /**
+   * Delete question and associated test cases from draft exam
+   */
+  static async deleteQuestion(questionId: string, instructorId: string) {
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { examVersion: { include: { exam: true } } },
+    });
+
+    if (!question) throw new Error('Question not found');
+    if (question.examVersion.exam.ownerId !== instructorId) {
+      throw new Error('Forbidden: You do not own this exam');
+    }
+    if (question.examVersion.exam.status !== 'draft') {
+      throw new Error('Cannot delete questions from a published or closed exam');
+    }
+
+    await prisma.testCase.deleteMany({ where: { questionId } });
+    return await prisma.question.delete({ where: { id: questionId } });
   }
 
   /**
