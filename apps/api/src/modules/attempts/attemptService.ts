@@ -72,41 +72,71 @@ export class AttemptService {
       }
     }
 
-    // Check existing attempts
+    // 1. Check if this student has ALREADY consumed this specific examination key
+    const keyUsage = await prisma.examKeyUsage.findUnique({
+      where: {
+        examKeyId_studentId: {
+          examKeyId: examKey.id,
+          studentId,
+        },
+      },
+    });
+
+    if (keyUsage) {
+      throw new Error(
+        'This examination key is single-use and has already been used by your account. You cannot enter this examination again with this key.'
+      );
+    }
+
+    // 2. Check if student has ALREADY entered and started an attempt for this examination
     const existingAttempts = await prisma.examAttempt.findMany({
       where: { examId: exam.id, studentId },
       orderBy: { createdAt: 'desc' },
     });
 
-    const activeAttempt = existingAttempts.find((a) => a.status === 'in_progress');
-    if (activeAttempt) {
-      return {
-        exam,
-        activeAttempt,
-        canResume: true,
-        attemptsCount: existingAttempts.length,
-      };
-    }
-
-    if (existingAttempts.length >= exam.maxAttempts) {
-      throw new Error(`Maximum attempt limit (${exam.maxAttempts}) reached for this examination`);
+    if (existingAttempts.length > 0) {
+      const latestAttempt = existingAttempts[0];
+      if (latestAttempt.status === 'in_progress') {
+        throw new Error(
+          'You have already started this examination and have an active session in progress. This single-use key cannot be entered again. Please resume your live exam directly from your dashboard.'
+        );
+      }
+      if (latestAttempt.status === 'terminated_suspicious') {
+        throw new Error(
+          'Your previous session for this examination was terminated for an integrity violation. This single-use examination key has already been consumed and cannot be reused.'
+        );
+      }
+      if (latestAttempt.status === 'submitted') {
+        throw new Error(
+          'You have already completed and submitted this examination. Examination keys are single-use and cannot be used again.'
+        );
+      }
+      throw new Error(
+        'This examination key is single-use and was already used to start your exam. You cannot enter this examination again with this key.'
+      );
     }
 
     return {
       exam,
       activeAttempt: null,
       canResume: false,
-      attemptsCount: existingAttempts.length,
+      attemptsCount: 0,
     };
   }
 
   /**
-   * Starts an exam attempt atomically with authoritative server deadline
+   * Starts an exam attempt atomically with authoritative server deadline and single-use key consumption
    */
-  static async startExamAttempt(examId: string, studentId: string) {
+  static async startExamAttempt(examId: string, studentId: string, rawKey?: string) {
     const exam = await prisma.exam.findUnique({
       where: { id: examId },
-      include: { versions: { orderBy: { versionNumber: 'desc' }, take: 1 } },
+      include: {
+        versions: { orderBy: { versionNumber: 'desc' }, take: 1 },
+        keys: {
+          where: { revokedAt: null },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
 
     if (!exam || exam.status !== 'published') {
@@ -116,58 +146,104 @@ export class AttemptService {
     const currentVersion = exam.versions[0];
     if (!currentVersion) throw new Error('Exam version not found');
 
-    // Check if active attempt already exists (idempotency)
-    const existingActive = await prisma.examAttempt.findFirst({
+    // Check if active attempt already exists or if student already started an attempt
+    const existingAttempts = await prisma.examAttempt.findMany({
       where: {
         examId,
         studentId,
-        status: 'in_progress',
       },
+      orderBy: { createdAt: 'desc' },
     });
 
-    if (existingActive) {
-      // If deadline already passed, expire it
-      if (new Date() > existingActive.deadlineAt) {
-        return await this.expireAttempt(existingActive.id);
+    if (existingAttempts.length > 0) {
+      const latest = existingAttempts[0];
+      if (latest.status === 'in_progress') {
+        // If deadline already passed, expire it
+        if (new Date() > latest.deadlineAt) {
+          return await this.expireAttempt(latest.id);
+        }
+        return latest;
       }
-      return existingActive;
+      throw new Error(
+        'You have already started or completed this examination. Examination access keys are single-use and cannot be used to start or re-enter an exam.'
+      );
     }
 
-    // Check attempt limits
-    const priorAttemptsCount = await prisma.examAttempt.count({
-      where: { examId, studentId },
-    });
+    // Resolve matching exam key
+    let matchingKey = null;
+    if (rawKey) {
+      const keyHash = hashExamKey(rawKey);
+      matchingKey = exam.keys.find((k) => k.keyHash === keyHash);
+    }
+    if (!matchingKey && exam.keys.length > 0) {
+      matchingKey = exam.keys[0];
+    }
 
-    if (priorAttemptsCount >= exam.maxAttempts) {
-      throw new Error('Maximum permitted attempts exceeded');
+    // Check if key was already consumed by this student
+    if (matchingKey) {
+      const priorUsage = await prisma.examKeyUsage.findUnique({
+        where: {
+          examKeyId_studentId: {
+            examKeyId: matchingKey.id,
+            studentId,
+          },
+        },
+      });
+
+      if (priorUsage) {
+        throw new Error(
+          'This examination key has already been consumed by your account. Single-use keys cannot be used to start an exam again.'
+        );
+      }
     }
 
     // Server-authoritative start and deadline
     const startedAt = new Date();
     const deadlineAt = new Date(startedAt.getTime() + exam.durationMinutes * 60 * 1000);
 
-    const attempt = await prisma.examAttempt.create({
-      data: {
-        examId,
-        examVersionId: currentVersion.id,
-        studentId,
-        status: 'in_progress',
-        startedAt,
-        deadlineAt,
-        trustScore: 100,
-        reviewStatus: 'none',
-      },
-    });
+    return await prisma.$transaction(async (tx) => {
+      // 1. Create the single attempt
+      const attempt = await tx.examAttempt.create({
+        data: {
+          examId,
+          examVersionId: currentVersion.id,
+          studentId,
+          examKeyId: matchingKey?.id || null,
+          status: 'in_progress',
+          startedAt,
+          deadlineAt,
+          trustScore: 100,
+          reviewStatus: 'none',
+        },
+      });
 
-    await recordAuditEvent({
-      actorId: studentId,
-      action: 'EXAM_ATTEMPT_STARTED',
-      targetType: 'ExamAttempt',
-      targetId: attempt.id,
-      metadata: { examId, durationMinutes: exam.durationMinutes, deadlineAt: deadlineAt.toISOString() },
-    });
+      // 2. Atomically record ExamKeyUsage so key is locked and cannot be reused
+      if (matchingKey) {
+        await tx.examKeyUsage.create({
+          data: {
+            examKeyId: matchingKey.id,
+            studentId,
+            examId,
+            usedAt: startedAt,
+          },
+        });
+      }
 
-    return attempt;
+      await recordAuditEvent({
+        actorId: studentId,
+        action: 'EXAM_ATTEMPT_STARTED',
+        targetType: 'ExamAttempt',
+        targetId: attempt.id,
+        metadata: {
+          examId,
+          examKeyId: matchingKey?.id,
+          durationMinutes: exam.durationMinutes,
+          deadlineAt: deadlineAt.toISOString(),
+        },
+      });
+
+      return attempt;
+    });
   }
 
   /**
