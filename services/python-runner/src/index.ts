@@ -58,7 +58,7 @@ app.post('/internal/execute', async (req: Request, res: Response) => {
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(RUNNER_PORT, () => {
-    console.log(`[PyAssess Python Runner] Listening on port ${RUNNER_PORT}`);
+    console.log(`[FocusAssess Python Runner] Listening on port ${RUNNER_PORT}`);
   });
 }
 
