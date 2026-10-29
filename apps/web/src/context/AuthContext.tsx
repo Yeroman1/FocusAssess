@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase';
-import { fetchWithAuth } from '@/lib/api';
+import { fetchWithAuth, API_BASE_URL } from '@/lib/api';
 import { UserRole, AccountStatus } from '@pyassess/shared';
 
 export interface UserProfile {
@@ -185,21 +185,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    try {
-      // 1. Notify backend to terminate session, invalidate token cache, and finalize active attempt if any
-      await fetchWithAuth('/auth/logout', { method: 'POST' }).catch((err) => {
-        console.warn('[SignOut] Backend logout error:', err);
-      });
-    } catch {
-      // Ignore network errors on logout
+    const token = session?.access_token;
+
+    // 1. Immediately & synchronously wipe all client storage, auth tokens, and cookies
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.clear();
+
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            (key.startsWith('sb-') ||
+              key.startsWith('pyassess_') ||
+              key.includes('auth') ||
+              key.includes('token'))
+          ) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+        document.cookie.split(';').forEach((cookie) => {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
+          if (name.startsWith('sb-') || name.includes('auth') || name.includes('token')) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;max-age=0;`;
+          }
+        });
+      } catch (err) {
+        console.warn('[SignOut] Storage cleanup error:', err);
+      }
+    }
+
+    // 2. Dispatch server session revocation & Supabase sign-out in background (keepalive ensures delivery during page transition)
+    if (token) {
+      try {
+        fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        // Ignore background fetch error
+      }
     }
 
     try {
-      // 2. Global sign-out from Supabase
       const supabase = createClient();
-      await supabase.auth.signOut({ scope: 'global' });
-    } catch (err) {
-      console.warn('[SignOut] Supabase signOut error:', err);
+      supabase.auth.signOut({ scope: 'global' }).catch(() => {});
+    } catch {
+      // Ignore background supabase error
     }
 
     // 3. Clear all React auth state
@@ -208,34 +248,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     lastFetchedUserIdRef.current = null;
 
-    // 4. Thoroughly purge client-side browser tokens, storages, and cookies
+    // 4. Directly replace location with root homepage — nothing in between
     if (typeof window !== 'undefined') {
-      try {
-        sessionStorage.clear();
-
-        // Clear all localStorage auth tokens (sb-*, pyassess_*, etc.)
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith('sb-') || key.startsWith('pyassess_') || key.includes('auth') || key.includes('token'))) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach((key) => localStorage.removeItem(key));
-
-        // Expire any auth cookies
-        document.cookie.split(';').forEach((cookie) => {
-          const eqPos = cookie.indexOf('=');
-          const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-          if (name.startsWith('sb-') || name.includes('auth') || name.includes('token')) {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;`;
-          }
-        });
-      } catch (err) {
-        console.warn('[SignOut] Storage cleanup error:', err);
-      }
-
-      // 5. Replace current location to root homepage so browser Back button cannot restore view
       window.location.replace('/');
     }
   };
