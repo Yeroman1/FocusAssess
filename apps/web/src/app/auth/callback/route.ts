@@ -40,9 +40,17 @@ export async function GET(request: Request) {
           }
         }
 
-        // If specific return destination requested (and user is not an unprivileged user trying to hit admin)
-        if (next && next !== '/admin/dashboard') {
-          destination = next;
+        // Validate redirect parameter against Open Redirect / Protocol Injection attacks
+        if (next && typeof next === 'string') {
+          const isSafeRelativePath =
+            next.startsWith('/') &&
+            !next.startsWith('//') &&
+            !next.startsWith('/\\') &&
+            !next.includes('://');
+
+          if (isSafeRelativePath && next !== '/admin/dashboard') {
+            destination = next;
+          }
         }
 
         return NextResponse.redirect(new URL(destination, requestUrl.origin));

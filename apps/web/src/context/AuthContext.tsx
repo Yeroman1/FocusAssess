@@ -37,9 +37,9 @@ const AuthContext = createContext<AuthContextType>({
 
 function createOptimisticProfile(user: User): UserProfile {
   const isInitialAdmin = user.email?.toLowerCase() === 'yeritti2017@gmail.com';
-  const role: UserRole = isInitialAdmin
-    ? 'admin'
-    : ((user.user_metadata?.role as UserRole) || 'student');
+  // Security: Never trust client-modifiable user_metadata for role derivation.
+  // Authoritative roles are strictly verified and loaded from the server PostgreSQL Profile database.
+  const role: UserRole = isInitialAdmin ? 'admin' : 'student';
 
   return {
     id: user.id,

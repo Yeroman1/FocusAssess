@@ -86,8 +86,8 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
   try {
     let authUser: { id: string; email?: string; user_metadata?: any };
 
-    // In local unit/integration test or dev mode with test tokens
-    if (process.env.NODE_ENV !== 'production' && token.startsWith('test-token-')) {
+    // Strictly isolate synthetic test tokens to automated test suites (NODE_ENV === 'test')
+    if (process.env.NODE_ENV === 'test' && token.startsWith('test-token-')) {
       const parts = token.replace('test-token-', '').split(':');
       const userId = parts[0] || 'test-student-id';
       const role = (parts[1] as UserRole) || 'student';

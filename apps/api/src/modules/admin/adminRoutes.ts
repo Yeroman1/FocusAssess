@@ -219,6 +219,14 @@ router.post('/users/:userId/role', requireAuth, requireRole(['admin']), async (r
   const { userId } = req.params;
   const newRole = parseResult.data.role as UserRole;
 
+  const targetUser = await prisma.profile.findUnique({ where: { id: userId } });
+  if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+  // Security: Protect primary platform administrator from accidental or malicious demotion
+  if (targetUser.email.toLowerCase() === config.initialAdminEmail && newRole !== 'admin') {
+    return res.status(400).json({ error: 'Cannot demote the primary platform administrator.' });
+  }
+
   const updated = await prisma.profile.update({
     where: { id: userId },
     data: { role: newRole },
@@ -240,6 +248,14 @@ router.post('/users/:userId/role', requireAuth, requireRole(['admin']), async (r
 // Suspend user account
 router.post('/users/:userId/suspend', requireAuth, requireRole(['admin']), async (req: AuthenticatedRequest, res: Response) => {
   const { userId } = req.params;
+
+  const targetUser = await prisma.profile.findUnique({ where: { id: userId } });
+  if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+  // Security: Protect primary platform administrator from suspension lockout
+  if (targetUser.email.toLowerCase() === config.initialAdminEmail) {
+    return res.status(400).json({ error: 'Cannot suspend the primary platform administrator.' });
+  }
 
   const updated = await prisma.profile.update({
     where: { id: userId },
