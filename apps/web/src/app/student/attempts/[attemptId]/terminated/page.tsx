@@ -5,8 +5,17 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { fetchWithAuth } from '@/lib/api';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function ExamTerminatedPage() {
+  return (
+    <ProtectedRoute allowedRoles={['student', 'instructor', 'admin']}>
+      <ExamTerminatedContent />
+    </ProtectedRoute>
+  );
+}
+
+function ExamTerminatedContent() {
   const params = useParams();
   const attemptId = params.attemptId as string;
 
@@ -34,10 +43,10 @@ export default function ExamTerminatedPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 flex flex-col relative w-full pt-20 pb-16 bg-surface px-4 md:px-8 max-w-2xl mx-auto">
+      <main className="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-2xl mx-auto">
         <div className="flex flex-col w-full pb-8 space-y-4">
           {/* Automatic Integrity Guard Alert Banner */}
-          <div className="bg-error-container rounded-2xl p-5 shadow-sm border border-error/20">
+          <div className="bg-error-container rounded-2xl p-4 sm:p-5 shadow-sm border border-error/20">
             <div className="flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-full bg-error text-white flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
                 <span className="material-symbols-outlined text-[22px]">shield_with_heart</span>

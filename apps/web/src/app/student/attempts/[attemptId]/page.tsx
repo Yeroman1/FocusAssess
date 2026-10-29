@@ -8,8 +8,17 @@ import { MonitoredEventType } from '@pyassess/shared';
 
 // Dynamically import Monaco Editor to avoid SSR window errors
 const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function ActiveExamWorkspacePage() {
+  return (
+    <ProtectedRoute allowedRoles={['student', 'instructor', 'admin']}>
+      <ActiveExamWorkspaceContent />
+    </ProtectedRoute>
+  );
+}
+
+function ActiveExamWorkspaceContent() {
   const router = useRouter();
   const params = useParams();
   const attemptId = params.attemptId as string;
@@ -242,11 +251,11 @@ export default function ActiveExamWorkspacePage() {
   return (
     <div className="min-h-screen bg-surface flex flex-col font-sans select-none">
       {/* Pinned Exam Meta Sub-Header */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-surface-container-high px-4 md:px-8 py-2.5 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-surface-container-high px-3 sm:px-4 md:px-8 py-2 sm:py-2.5 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Brand & Autosave Status */}
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="font-bold text-base text-on-surface">PyAssess</span>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="font-bold text-sm sm:text-base text-on-surface">FocusAssess</span>
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-high text-xs font-mono text-on-surface">
               <span className={`w-1.5 h-1.5 rounded-full ${autosaveStatus === 'saving' ? 'bg-amber-500 animate-spin' : 'bg-on-tertiary-container animate-pulse'}`} />
               <span>{autosaveStatus === 'saving' ? 'Autosaving...' : 'Live Sync'}</span>
@@ -257,18 +266,18 @@ export default function ActiveExamWorkspacePage() {
           </div>
 
           {/* Trust Score & Authoritative Timer */}
-          <div className="flex items-center gap-3">
-            <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold ${
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold ${
               trustScore >= 70 ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-error-container text-error'
             }`}>
               <span className="material-symbols-outlined text-[14px]">verified_user</span>
               <span>Trust {trustScore}%</span>
             </div>
 
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider ${
+            <div className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold tracking-wider ${
               remainingSeconds < 300 ? 'bg-error text-white animate-pulse' : 'bg-primary-container text-primary-fixed'
             }`}>
-              <span className="material-symbols-outlined text-[15px]">timer</span>
+              <span className="material-symbols-outlined text-[14px] sm:text-[15px]">timer</span>
               <span>{hours}:{mins}:{secs}</span>
             </div>
           </div>
@@ -276,7 +285,7 @@ export default function ActiveExamWorkspacePage() {
       </header>
 
       {/* Main Workspace Layout */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 md:px-8 py-4 flex flex-col gap-4">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex flex-col gap-3 sm:gap-4">
         {/* Question Stepper Navigation Ribbon */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-xs font-mono">
@@ -284,7 +293,7 @@ export default function ActiveExamWorkspacePage() {
             <span className="text-secondary font-medium">Question {activeQuestionIdx + 1} of {questions.length}</span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5">
             {questions.map((q, idx) => {
               const isAnswered = !!codeAnswers[q.id]?.trim() && codeAnswers[q.id] !== getDefaultStarterCode(q.title);
               const isActive = idx === activeQuestionIdx;
@@ -294,7 +303,7 @@ export default function ActiveExamWorkspacePage() {
                 <button
                   key={q.id}
                   onClick={() => setActiveQuestionIdx(idx)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all flex-shrink-0 text-left border ${
+                  className={`flex items-center gap-2 px-3 py-1.5 sm:py-2 rounded-xl transition-all flex-shrink-0 text-left border ${
                     isActive
                       ? 'bg-secondary text-white border-secondary shadow-sm'
                       : isFlagged
@@ -326,13 +335,13 @@ export default function ActiveExamWorkspacePage() {
         {/* 2-Column Split: Problem Statement (Left) + Monaco Python Editor (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
           {/* Left Column: Problem Statement & Bento Specs (5 cols) */}
-          <div className="lg:col-span-5 bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high/80 shadow-sm flex flex-col space-y-4 overflow-y-auto max-h-[750px]">
+          <div className="lg:col-span-5 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/80 shadow-sm flex flex-col space-y-4 overflow-y-auto max-h-[500px] lg:max-h-[750px]">
             <div className="flex items-start justify-between gap-2 border-b border-surface-container-high pb-3">
               <div>
                 <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-surface-container text-secondary">
                   Problem {activeQuestionIdx + 1}
                 </span>
-                <h2 className="text-lg font-bold text-on-surface mt-1">{activeQuestion.title}</h2>
+                <h2 className="text-base sm:text-lg font-bold text-on-surface mt-1">{activeQuestion.title}</h2>
               </div>
               <span className="px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-mono text-xs font-bold flex-shrink-0">
                 {activeQuestion.maxMarks} Marks
@@ -393,7 +402,7 @@ export default function ActiveExamWorkspacePage() {
           {/* Right Column: Monaco Python Editor (7 cols) */}
           <div className="lg:col-span-7 bg-dark-ide rounded-2xl border border-slate-800 shadow-md flex flex-col overflow-hidden">
             {/* Editor Chrome Top Bar */}
-            <div className="h-10 px-4 bg-dark-ide-header flex items-center justify-between select-none border-b border-slate-800 text-slate-300">
+            <div className="h-10 px-3 sm:px-4 bg-dark-ide-header flex items-center justify-between select-none border-b border-slate-800 text-slate-300">
               <div className="flex items-center gap-2 font-mono text-xs">
                 <span className="material-symbols-outlined text-[16px] text-emerald-400">terminal</span>
                 <span className="font-semibold text-slate-200">solution.py</span>
@@ -407,8 +416,44 @@ export default function ActiveExamWorkspacePage() {
               </div>
             </div>
 
+            {/* Quick Answer Selector for True / False Questions */}
+            {(activeQuestion?.constraints?.toLowerCase().includes('true / false') ||
+              activeQuestion?.outputDescription?.includes('True') ||
+              activeQuestion?.outputDescription?.includes('False')) && (
+              <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3">
+                <span className="text-xs font-mono text-slate-300 font-bold flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px] text-purple-400">check_circle</span>
+                  <span>Select Answer:</span>
+                </span>
+                <div className="flex items-center gap-2 flex-1 max-w-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleCodeChange('print(True)')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      currentCode.toLowerCase().includes('true')
+                        ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>TRUE</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCodeChange('print(False)')}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      currentCode.toLowerCase().includes('false')
+                        ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>FALSE</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Monaco Python Editor Container */}
-            <div className="flex-1 w-full min-h-[460px] relative bg-dark-ide">
+            <div className="flex-1 w-full min-h-[360px] sm:min-h-[460px] relative bg-dark-ide">
               <Editor
                 height="460px"
                 language="python"
@@ -432,7 +477,7 @@ export default function ActiveExamWorkspacePage() {
             </div>
 
             {/* Editor Status Footer */}
-            <div className="px-4 py-2 bg-dark-ide-footer text-slate-400 flex items-center justify-between text-xs font-mono border-t border-slate-800">
+            <div className="px-3 sm:px-4 py-2 bg-dark-ide-footer text-slate-400 flex items-center justify-between text-xs font-mono border-t border-slate-800">
               <div className="flex items-center gap-3">
                 <span>UTF-8</span>
                 <span>Spaces: 4</span>
@@ -444,8 +489,8 @@ export default function ActiveExamWorkspacePage() {
         </div>
 
         {/* Bottom Interactive Action Dock */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-surface-container-high">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 border-t border-surface-container-high">
+          <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
             <button
               onClick={() => {
                 setFlaggedQuestions((prev) => ({
@@ -453,7 +498,7 @@ export default function ActiveExamWorkspacePage() {
                   [activeQuestion.id]: !prev[activeQuestion.id],
                 }));
               }}
-              className={`h-11 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+              className={`h-11 px-3.5 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors flex-1 sm:flex-initial ${
                 flaggedQuestions[activeQuestion.id]
                   ? 'bg-amber-100 text-amber-900 border-amber-300'
                   : 'bg-surface-container-high text-on-surface border-surface-container-high'
@@ -463,29 +508,31 @@ export default function ActiveExamWorkspacePage() {
               <span>{flaggedQuestions[activeQuestion.id] ? 'Flagged' : 'Review Later'}</span>
             </button>
 
-            <button
-              onClick={() => setActiveQuestionIdx((prev) => Math.max(0, prev - 1))}
-              disabled={activeQuestionIdx === 0}
-              className="h-11 px-3 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center gap-1 disabled:opacity-40"
-            >
-              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-              <span>Prev</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setActiveQuestionIdx((prev) => Math.max(0, prev - 1))}
+                disabled={activeQuestionIdx === 0}
+                className="h-11 px-3 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center gap-1 disabled:opacity-40"
+              >
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                <span>Prev</span>
+              </button>
 
-            <button
-              onClick={() => setActiveQuestionIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-              disabled={activeQuestionIdx === questions.length - 1}
-              className="h-11 px-3 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center gap-1 disabled:opacity-40"
-            >
-              <span>Next</span>
-              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-            </button>
+              <button
+                onClick={() => setActiveQuestionIdx((prev) => Math.min(questions.length - 1, prev + 1))}
+                disabled={activeQuestionIdx === questions.length - 1}
+                className="h-11 px-3 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center gap-1 disabled:opacity-40"
+              >
+                <span>Next</span>
+                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+              </button>
+            </div>
           </div>
 
           <button
             onClick={() => setShowSubmitConfirm(true)}
             disabled={isSubmitting}
-            className="w-full sm:w-auto h-11 px-6 rounded-xl bg-primary text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.99] transition-all shadow-md ml-auto"
+            className="w-full sm:w-auto h-11 px-6 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.99] transition-all shadow-md ml-auto"
           >
             <span className="material-symbols-outlined text-[18px]">send</span>
             <span>Submit &amp; Grade Examination</span>
@@ -495,10 +542,10 @@ export default function ActiveExamWorkspacePage() {
 
       {/* Final Submit Confirmation Modal */}
       {showSubmitConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-md w-full rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white max-w-md w-full rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0">
                 <span className="material-symbols-outlined text-[24px]">assignment_turned_in</span>
               </div>
               <div>
@@ -514,7 +561,7 @@ export default function ActiveExamWorkspacePage() {
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowSubmitConfirm(false)}
-                className="px-4 h-10 rounded-xl bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high"
+                className="flex-1 sm:flex-initial px-4 h-10 rounded-xl bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high text-center"
               >
                 Continue Working
               </button>
@@ -522,7 +569,7 @@ export default function ActiveExamWorkspacePage() {
               <button
                 onClick={handleSubmitExam}
                 disabled={isSubmitting}
-                className="px-5 h-10 rounded-xl bg-primary text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-slate-800"
+                className="flex-1 sm:flex-initial px-5 h-10 rounded-xl bg-primary text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-800 text-center"
               >
                 {isSubmitting ? 'Grading...' : 'Confirm Submission'}
               </button>

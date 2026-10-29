@@ -5,8 +5,17 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { fetchWithAuth } from '@/lib/api';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function StudentResultsPage() {
+  return (
+    <ProtectedRoute allowedRoles={['student', 'instructor', 'admin']}>
+      <StudentResultsContent />
+    </ProtectedRoute>
+  );
+}
+
+function StudentResultsContent() {
   const params = useParams();
   const attemptId = params.attemptId as string;
 
@@ -32,10 +41,10 @@ export default function StudentResultsPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 flex flex-col relative w-full pt-20 pb-16 bg-surface px-4 md:px-8 max-w-2xl mx-auto">
-        <div className="flex flex-col w-full pb-8 space-y-5">
+      <main className="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-2xl mx-auto">
+        <div className="flex flex-col w-full pb-8 space-y-4 sm:space-y-5">
           {/* Header Card */}
-          <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-container-high/60 text-center space-y-3">
+          <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-sm border border-surface-container-high/60 text-center space-y-3">
             {loading ? (
               <div className="py-12 space-y-3 text-center">
                 <span className="material-symbols-outlined text-[36px] text-secondary animate-spin">refresh</span>
