@@ -77,12 +77,20 @@ model Profile {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  ownedExams   Exam[]
-  enrollments  ClassEnrollment[]
-  attempts     ExamAttempt[]
-  auditActions AuditLog[]
-  examKeys     ExamKey[]
-  classes      Class[]
+  ownedExams     Exam[]
+  enrollments    ClassEnrollment[]
+  attempts       ExamAttempt[]
+  auditActions   AuditLog[]
+  examKeys       ExamKey[]
+  classes        Class[]
+  keyUsages      ExamKeyUsage[]
+}
+
+model AuthorizedTeacher {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  addedBy   String?
+  createdAt DateTime @default(now())
 }
 
 model Class {
@@ -208,8 +216,24 @@ model ExamKey {
   expiresAt DateTime?
   revokedAt DateTime?
 
-  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
-  creator Profile @relation(fields: [createdBy], references: [id])
+  exam     Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  creator  Profile        @relation(fields: [createdBy], references: [id])
+  usages   ExamKeyUsage[]
+  attempts ExamAttempt[]
+}
+
+model ExamKeyUsage {
+  id        String   @id @default(uuid())
+  examKeyId String
+  studentId String
+  examId    String
+  usedAt    DateTime @default(now())
+
+  examKey ExamKey @relation(fields: [examKeyId], references: [id], onDelete: Cascade)
+  student Profile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([examKeyId, studentId])
+  @@index([studentId, examId])
 }
 
 model ExamAttempt {
@@ -217,6 +241,7 @@ model ExamAttempt {
   examId            String
   examVersionId     String
   studentId         String
+  examKeyId         String?
   status            AttemptStatus @default(in_progress)
   startedAt         DateTime      @default(now())
   deadlineAt        DateTime
@@ -235,6 +260,7 @@ model ExamAttempt {
   exam           Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
   examVersion    ExamVersion     @relation(fields: [examVersionId], references: [id], onDelete: Cascade)
   student        Profile         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  examKey        ExamKey?        @relation(fields: [examKeyId], references: [id], onDelete: SetNull)
   answers        StudentAnswer[]
   events         ExamEvent[]
   gradingJob     GradingJob?
