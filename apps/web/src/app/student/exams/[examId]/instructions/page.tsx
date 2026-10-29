@@ -5,8 +5,17 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { fetchWithAuth } from '@/lib/api';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function PreExamInstructionsPage() {
+  return (
+    <ProtectedRoute allowedRoles={['student', 'instructor', 'admin']}>
+      <PreExamInstructionsContent />
+    </ProtectedRoute>
+  );
+}
+
+function PreExamInstructionsContent() {
   const router = useRouter();
   const params = useParams();
   const examId = params.examId as string;
@@ -55,10 +64,10 @@ export default function PreExamInstructionsPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 flex flex-col relative w-full pt-20 pb-16 bg-surface px-4 md:px-8 max-w-3xl mx-auto">
+      <main className="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-3xl mx-auto">
         <div className="flex flex-col w-full pb-8">
           {/* Context Header Banner */}
-          <section className="bg-surface-container-low rounded-2xl p-5 shadow-sm mb-4 border border-surface-container-high/60">
+          <section className="bg-surface-container-low rounded-2xl p-4 sm:p-5 shadow-sm mb-4 border border-surface-container-high/60">
             <div className="flex items-center gap-2 mb-1.5">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary text-white font-mono text-xs uppercase tracking-wider font-semibold">
                 Midterm Assessment
@@ -271,17 +280,17 @@ export default function PreExamInstructionsPage() {
             </div>
 
             {errorMessage && (
-              <div className="p-3 bg-error-container text-error text-xs rounded-xl flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">error</span>
+              <div className="p-3.5 bg-error-container text-error text-xs rounded-xl flex items-start gap-2.5 font-medium leading-relaxed">
+                <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-0.5">error</span>
                 <span>{errorMessage}</span>
               </div>
             )}
 
             <button
               onClick={handleBeginExam}
-              disabled={!allConfirmed || isStarting}
+              disabled={!allConfirmed || isStarting || !!errorMessage}
               className={`w-full h-12 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all ${
-                allConfirmed && !isStarting
+                allConfirmed && !isStarting && !errorMessage
                   ? 'bg-secondary text-white hover:bg-secondary/90 active:scale-[0.99] cursor-pointer'
                   : 'bg-surface-container-highest text-on-surface-variant opacity-60 cursor-not-allowed'
               }`}
