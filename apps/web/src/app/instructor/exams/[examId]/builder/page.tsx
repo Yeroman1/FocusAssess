@@ -510,6 +510,48 @@ function ExamBuilderContent() {
     }
   };
 
+  // Close / Unpublish Exam Entry
+  const [isTogglingEntry, setIsTogglingEntry] = useState(false);
+
+  const handleCloseEntry = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to close entry to this examination?\n\n' +
+      '• Students who have already entered and started will continue taking the test uninterrupted.\n' +
+      '• No new students will be allowed to enter, even if they have the correct examination key.'
+    );
+    if (!confirmed) return;
+
+    setIsTogglingEntry(true);
+    try {
+      const res = await fetchWithAuth(`/exams/${examId}/close`, { method: 'POST' });
+      setExam(res.exam);
+      await loadExam();
+    } catch (err: any) {
+      alert(`Failed to close examination entry: ${err.message}`);
+    } finally {
+      setIsTogglingEntry(false);
+    }
+  };
+
+  const handleReopenEntry = async () => {
+    const confirmed = window.confirm(
+      'Reopen examination entry?\n\n' +
+      '• New students with the valid examination key will once again be permitted to enter and begin.'
+    );
+    if (!confirmed) return;
+
+    setIsTogglingEntry(true);
+    try {
+      const res = await fetchWithAuth(`/exams/${examId}/reopen`, { method: 'POST' });
+      setExam(res.exam);
+      await loadExam();
+    } catch (err: any) {
+      alert(`Failed to reopen examination entry: ${err.message}`);
+    } finally {
+      setIsTogglingEntry(false);
+    }
+  };
+
   // Copy token to clipboard
   const handleCopyToken = () => {
     if (publishedToken) {
@@ -560,9 +602,15 @@ function ExamBuilderContent() {
             <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
               exam?.status === 'published'
                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
+                : exam?.status === 'closed'
+                ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30'
                 : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30'
             }`}>
-              {exam?.status === 'published' ? '● Published' : '● Draft Mode'}
+              {exam?.status === 'published'
+                ? '● Published (Live)'
+                : exam?.status === 'closed'
+                ? '● Entry Closed'
+                : '● Draft Mode'}
             </span>
           </div>
         </div>
@@ -1627,10 +1675,37 @@ function ExamBuilderContent() {
                 <span className="material-symbols-outlined text-[18px]">lock</span>
                 <span>{isPublishing ? 'Publishing...' : 'Publish & Generate Token'}</span>
               </button>
+            ) : exam?.status === 'published' ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-600 font-bold px-3 py-2 rounded-xl bg-emerald-500/10">
+                  <span className="material-symbols-outlined text-[18px]">verified</span>
+                  <span>Exam Published</span>
+                </div>
+                <button
+                  onClick={handleCloseEntry}
+                  disabled={isTogglingEntry}
+                  className="px-4 h-11 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/20 transition-all disabled:opacity-50"
+                  title="Stop new candidate entries while allowing active attempts to finish"
+                >
+                  <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <span>{isTogglingEntry ? 'Closing...' : 'Close Entry (Unpublish)'}</span>
+                </button>
+              </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs font-mono text-emerald-600 font-bold px-3 py-2 rounded-xl bg-emerald-500/10">
-                <span className="material-symbols-outlined text-[18px]">verified</span>
-                <span>Exam Published</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs font-mono text-rose-600 font-bold px-3 py-2 rounded-xl bg-rose-500/10">
+                  <span className="material-symbols-outlined text-[18px]">block</span>
+                  <span>Entry Closed</span>
+                </div>
+                <button
+                  onClick={handleReopenEntry}
+                  disabled={isTogglingEntry}
+                  className="px-4 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+                  title="Allow new candidate entries again using the examination key"
+                >
+                  <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                  <span>{isTogglingEntry ? 'Reopening...' : 'Reopen Examination Entry'}</span>
+                </button>
               </div>
             )}
           </div>

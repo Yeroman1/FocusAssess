@@ -114,7 +114,7 @@ router.post('/', requireAuth, requireRole(['instructor', 'admin']), async (req: 
   return res.status(201).json({ exam });
 });
 
-// Get exam details
+// Get exam details (Strictly protected against IDOR & Question Leakage)
 router.get('/:examId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { examId } = req.params;
   const user = req.user!;
@@ -142,27 +142,18 @@ router.get('/:examId', requireAuth, async (req: AuthenticatedRequest, res: Respo
 
   if (!exam) return res.status(404).json({ error: 'Exam not found' });
 
-  const currentVersion = exam.versions[0];
+  // 1. Strict Instructor Ownership Enforcement (IDOR Protection)
+  if (user.role === 'instructor' && exam.ownerId !== user.id) {
+    return res.status(403).json({ error: 'Forbidden: You do not have permission to view this examination.' });
+  }
 
-  // For students: Sanitize question data, strictly omit hidden test cases!
+  // 2. Strict Student Protection: Students must never pre-fetch question statements or test cases
   if (user.role === 'student') {
-    const sanitizedQuestions = currentVersion?.questions.map((q) => ({
-      id: q.id,
-      title: q.title,
-      statement: q.statement,
-      inputDescription: q.inputDescription,
-      outputDescription: q.outputDescription,
-      constraints: q.constraints,
-      maxMarks: q.maxMarks,
-      position: q.position,
-      publicExamples: q.testCases
-        .filter((tc) => !tc.isHidden)
-        .map((tc) => ({
-          stdin: tc.stdin,
-          expectedOutput: tc.expectedOutput,
-        })),
-    })) ?? [];
+    if (exam.status !== 'published') {
+      return res.status(403).json({ error: 'Forbidden: This examination is not available.' });
+    }
 
+    // Return only public metadata; questions are exclusively distributed through active attempts
     return res.json({
       exam: {
         id: exam.id,
@@ -175,12 +166,11 @@ router.get('/:examId', requireAuth, async (req: AuthenticatedRequest, res: Respo
         status: exam.status,
         rules: exam.rules ? JSON.parse(exam.rules) : null,
         owner: exam.owner,
-        questions: sanitizedQuestions,
       },
     });
   }
 
-  // Instructor / Admin view (includes full test cases)
+  // Authorized Exam Owner or System Admin view (includes full question configuration and test cases)
   return res.json({ exam });
 });
 
@@ -256,9 +246,20 @@ router.post('/:examId/publish', requireAuth, requireRole(['instructor', 'admin']
   return res.json(result);
 });
 
-// Close exam
+// Close / Unpublish exam entry (stops all new candidate entries, allows existing in-progress attempts to continue)
 router.post('/:examId/close', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
   const updated = await ExamService.closeExam(req.params.examId, req.user!.id);
+  return res.json({ exam: updated });
+});
+
+router.post('/:examId/unpublish', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const updated = await ExamService.closeExam(req.params.examId, req.user!.id);
+  return res.json({ exam: updated });
+});
+
+// Reopen exam entry (allows new entries again)
+router.post('/:examId/reopen', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const updated = await ExamService.reopenExam(req.params.examId, req.user!.id);
   return res.json({ exam: updated });
 });
 

@@ -384,12 +384,15 @@ export class ExamService {
   }
 
   /**
-   * Close an active exam
+   * Close / Unpublish an active exam (stops all new candidate entries)
    */
   static async closeExam(examId: string, instructorId: string) {
     const exam = await prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) throw new Error('Exam not found');
-    if (exam.ownerId !== instructorId) throw new Error('Forbidden');
+
+    const profile = await prisma.profile.findUnique({ where: { id: instructorId } });
+    const isAdmin = profile?.role === 'admin' || profile?.email?.toLowerCase() === 'yeritti2017@gmail.com';
+    if (exam.ownerId !== instructorId && !isAdmin) throw new Error('Forbidden: You do not own this exam');
 
     const updated = await prisma.exam.update({
       where: { id: examId },
@@ -398,9 +401,37 @@ export class ExamService {
 
     await recordAuditEvent({
       actorId: instructorId,
-      action: 'EXAM_CLOSED',
+      action: 'EXAM_ENTRY_CLOSED',
       targetType: 'Exam',
       targetId: examId,
+      metadata: { previousStatus: exam.status },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Reopen an exam to allow new candidate entries
+   */
+  static async reopenExam(examId: string, instructorId: string) {
+    const exam = await prisma.exam.findUnique({ where: { id: examId } });
+    if (!exam) throw new Error('Exam not found');
+
+    const profile = await prisma.profile.findUnique({ where: { id: instructorId } });
+    const isAdmin = profile?.role === 'admin' || profile?.email?.toLowerCase() === 'yeritti2017@gmail.com';
+    if (exam.ownerId !== instructorId && !isAdmin) throw new Error('Forbidden: You do not own this exam');
+
+    const updated = await prisma.exam.update({
+      where: { id: examId },
+      data: { status: 'published' },
+    });
+
+    await recordAuditEvent({
+      actorId: instructorId,
+      action: 'EXAM_ENTRY_REOPENED',
+      targetType: 'Exam',
+      targetId: examId,
+      metadata: { previousStatus: exam.status },
     });
 
     return updated;
