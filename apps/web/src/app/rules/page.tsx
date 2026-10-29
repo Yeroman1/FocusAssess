@@ -9,23 +9,23 @@ export default function RulesPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 pt-20 pb-16 px-4 md:px-8 max-w-4xl mx-auto w-full">
-        <div className="flex flex-col gap-6">
+      <main className="flex-1 pt-16 sm:pt-20 pb-12 sm:pb-16 px-3 sm:px-4 md:px-8 max-w-4xl mx-auto w-full">
+        <div className="flex flex-col gap-5 sm:gap-6">
           <div className="flex items-center gap-2">
             <Link href="/" className="text-on-surface-variant hover:text-on-surface">
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </Link>
-            <h1 className="text-2xl font-bold text-on-surface">PyAssess Examination Protocols &amp; Integrity Guidelines</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-on-surface">FocusAssess Examination Protocols &amp; Integrity Guidelines</h1>
           </div>
 
-          <div className="bg-surface-container-lowest p-6 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-6 text-sm text-on-surface">
+          <div className="bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-5 sm:space-y-6 text-sm text-on-surface">
             <section className="space-y-2">
               <h2 className="text-base font-bold text-on-surface flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary">verified_user</span>
                 1. Automated Telemetric Integrity Monitoring
               </h2>
               <p className="text-xs text-on-surface-variant leading-relaxed">
-                PyAssess is engineered to protect examination equity for all students. Every examination attempt begins with an authoritative baseline trust index of 100%. Transparent client telemetry monitors active window focus, visibility status, and fullscreen containment.
+                FocusAssess is engineered to protect examination equity for all students. Every examination attempt begins with an authoritative baseline trust index of 100%. Transparent client telemetry monitors active window focus, visibility status, and fullscreen containment.
               </p>
             </section>
 
