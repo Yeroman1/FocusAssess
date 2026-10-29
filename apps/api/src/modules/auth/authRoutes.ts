@@ -73,6 +73,9 @@ router.patch('/me', requireAuth, async (req: AuthenticatedRequest, res: Response
     data: { fullName: fullName.trim() },
   });
 
+  invalidateUserAuthCache(req.user!.id);
+  invalidateUserAuthCache(req.user!.email);
+
   return res.json({ user: updated });
 });
 
@@ -82,27 +85,13 @@ router.get('/me/dashboard', requireAuth, async (req: AuthenticatedRequest, res: 
 
   if (user.role === 'student') {
     const [
-      activeNowCount,
-      scheduledExams,
+      totalAttempts,
       completedAttempts,
       pendingEvaluationAttempts,
       activeAttempt,
-      recentSubmissions,
+      studentAttempts,
     ] = await Promise.all([
-      prisma.exam.count({ where: { status: 'published' } }),
-      prisma.exam.findMany({
-        where: { status: 'published' },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          durationMinutes: true,
-          availableFrom: true,
-          availableUntil: true,
-          status: true,
-        },
-      }),
+      prisma.examAttempt.count({ where: { studentId: user.id } }),
       prisma.examAttempt.count({
         where: { studentId: user.id, status: { in: ['submitted', 'expired'] }, gradingStatus: 'graded' },
       }),
@@ -111,39 +100,51 @@ router.get('/me/dashboard', requireAuth, async (req: AuthenticatedRequest, res: 
       }),
       prisma.examAttempt.findFirst({
         where: { studentId: user.id, status: 'in_progress' },
-        include: { exam: true },
+        include: { exam: { select: { id: true, title: true, durationMinutes: true } } },
       }),
       prisma.examAttempt.findMany({
         where: { studentId: user.id },
         orderBy: { createdAt: 'desc' },
-        take: 5,
-        include: { exam: { select: { title: true, resultsReleasedAt: true } } },
+        include: { exam: { select: { id: true, title: true, durationMinutes: true, resultsReleasedAt: true } } },
       }),
     ]);
+
+    const avgTrust =
+      studentAttempts.length > 0
+        ? Math.round(
+            studentAttempts.reduce((acc, a) => acc + (a.trustScore ?? 100), 0) /
+              studentAttempts.length
+          )
+        : 100;
+
+    const mappedSubmissions = studentAttempts.map((att: any) => ({
+      id: att.id,
+      examId: att.exam.id,
+      examTitle: att.exam.title,
+      durationMinutes: att.exam.durationMinutes,
+      status: att.status,
+      gradingStatus: att.gradingStatus,
+      trustScore: att.trustScore,
+      startedAt: att.startedAt,
+      submittedAt: att.submittedAt,
+      // Only disclose marks if results released
+      resultsReleased: !!att.exam.resultsReleasedAt,
+      totalMarks: att.exam.resultsReleasedAt ? att.totalMarksAwarded : null,
+      maxMarks: att.exam.resultsReleasedAt ? att.maxMarksTotal : null,
+      percentageScore: att.exam.resultsReleasedAt ? att.percentageScore : null,
+    }));
 
     return res.json({
       role: 'student',
       stats: {
-        activeNow: activeNowCount,
-        upcoming: scheduledExams.length,
+        examsTaken: totalAttempts,
         completed: completedAttempts,
         evaluating: pendingEvaluationAttempts,
+        averageTrust: avgTrust,
       },
       activeAttempt,
-      scheduledExams,
-      recentSubmissions: recentSubmissions.map((att: any) => ({
-        id: att.id,
-        examTitle: att.exam.title,
-        status: att.status,
-        gradingStatus: att.gradingStatus,
-        trustScore: att.trustScore,
-        submittedAt: att.submittedAt,
-        // Only disclose marks if results released
-        resultsReleased: !!att.exam.resultsReleasedAt,
-        totalMarks: att.exam.resultsReleasedAt ? att.totalMarksAwarded : null,
-        maxMarks: att.exam.resultsReleasedAt ? att.maxMarksTotal : null,
-        percentageScore: att.exam.resultsReleasedAt ? att.percentageScore : null,
-      })),
+      recentSubmissions: mappedSubmissions,
+      myExams: mappedSubmissions,
     });
   }
 

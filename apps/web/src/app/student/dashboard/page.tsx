@@ -130,45 +130,29 @@ function StudentDashboardContent() {
             </section>
           )}
 
-          {/* Real Metrics 4-Up Grid */}
+          {/* Real Metrics 4-Up Grid (Student's Personal Examination History) */}
           <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between relative overflow-hidden">
-              <div className="w-1.5 h-full bg-secondary absolute left-0 top-0 rounded-l" />
+              <div className="w-1.5 h-full bg-primary absolute left-0 top-0 rounded-l" />
               <div className="flex items-center justify-between pl-1">
-                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Available</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
-                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">bolt</span>
+                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Exams Taken</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">history_edu</span>
                 </div>
               </div>
               <div className="mt-2 pl-1 flex items-baseline gap-1.5">
                 <span className="text-xl sm:text-2xl font-semibold text-on-surface">
-                  {isLoadingData ? '—' : (dashboardData?.stats?.activeNow ?? 0)}
+                  {isLoadingData ? '—' : (dashboardData?.stats?.examsTaken ?? 0)}
                 </span>
-                <span className="text-[11px] sm:text-xs text-secondary font-medium font-mono">Published</span>
+                <span className="text-[11px] sm:text-xs text-primary font-medium font-mono">Attempts</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant pl-1">Active exams</span>
-            </div>
-
-            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Scheduled</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">calendar_month</span>
-                </div>
-              </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-xl sm:text-2xl font-semibold text-on-surface">
-                  {isLoadingData ? '—' : (dashboardData?.stats?.upcoming ?? 0)}
-                </span>
-                <span className="text-[11px] sm:text-xs text-on-surface-variant font-medium font-mono">Upcoming</span>
-              </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant">Academic calendar</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant pl-1">Total exams taken</span>
             </div>
 
             <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Completed</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-on-tertiary-container">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-emerald-600">
                   <span className="material-symbols-outlined text-[16px] sm:text-[18px]">task_alt</span>
                 </div>
               </div>
@@ -176,15 +160,15 @@ function StudentDashboardContent() {
                 <span className="text-xl sm:text-2xl font-semibold text-on-surface">
                   {isLoadingData ? '—' : (dashboardData?.stats?.completed ?? 0)}
                 </span>
-                <span className="text-[11px] sm:text-xs text-on-surface-variant font-medium font-mono">Graded</span>
+                <span className="text-[11px] sm:text-xs text-emerald-600 font-medium font-mono">Graded</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant">Submitted attempts</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant">Finalized results</span>
             </div>
 
             <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Evaluating</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-amber-600">
                   <span className="material-symbols-outlined text-[16px] sm:text-[18px]">hourglass_top</span>
                 </div>
               </div>
@@ -192,192 +176,246 @@ function StudentDashboardContent() {
                 <span className="text-xl sm:text-2xl font-semibold text-on-surface">
                   {isLoadingData ? '—' : (dashboardData?.stats?.evaluating ?? 0)}
                 </span>
-                <span className="text-[11px] sm:text-xs text-secondary font-medium font-mono">Pending</span>
+                <span className="text-[11px] sm:text-xs text-amber-600 font-medium font-mono">Pending</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant">Sandbox evaluation</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant">Review in progress</span>
+            </div>
+
+            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Avg Trust Score</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-blue-600">
+                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">verified_user</span>
+                </div>
+              </div>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-semibold text-on-surface">
+                  {isLoadingData ? '—' : `${dashboardData?.stats?.averageTrust ?? 100}%`}
+                </span>
+                <span className="text-[11px] sm:text-xs text-blue-600 font-medium font-mono">Integrity</span>
+              </div>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant">Proctoring index</span>
             </div>
           </section>
 
-          {/* Active In-Progress Attempt Card (if any exists) */}
-          {dashboardData?.activeAttempt && (
-            <section className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm border-2 border-secondary relative overflow-hidden">
-              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error-container text-error text-xs font-mono font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-error animate-pulse" />
-                  SESSION IN PROGRESS
-                </span>
-                <span className="text-xs font-mono text-secondary font-bold">ACTIVE ATTEMPT</span>
-              </div>
-
-              <div className="space-y-1">
-                <h2 className="text-lg sm:text-xl font-bold text-on-surface">{dashboardData.activeAttempt.exam?.title || 'Examination Attempt'}</h2>
-                <p className="text-xs sm:text-sm text-secondary font-medium">Session is live. Anti-cheating telemetry active.</p>
-              </div>
-
-              <div className="mt-4">
-                <Link
-                  href={`/student/attempts/${dashboardData.activeAttempt.id}`}
-                  className="w-full h-11 bg-secondary text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-secondary/90 active:scale-[0.99] transition-all shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                  <span>Resume Live Examination Workspace</span>
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                </Link>
-              </div>
-            </section>
-          )}
-
-          {/* Assessment Key Entry Card */}
-          <section className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm border border-surface-container-high/60 space-y-3">
-            <div className="flex items-center justify-between">
+          {/* Section 1: Available Exams & Access Dispatch */}
+          <section id="available-exams" className="space-y-4 scroll-mt-20">
+            <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary">
                   <span className="material-symbols-outlined text-[18px]">key</span>
                 </div>
-                <h3 className="text-sm font-semibold text-on-surface">Enter Examination Key</h3>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-on-surface">Available Examinations &amp; Key Access</h3>
+                  <p className="text-xs text-on-surface-variant">Enter your exam access key to start or resume an examination.</p>
+                </div>
               </div>
-              <span className="text-[10px] sm:text-xs font-mono text-on-surface-variant font-medium">ACCESS DISPATCH</span>
-            </div>
-
-            <p className="text-xs text-on-surface-variant">
-              Enter the unique examination key distributed by your instructor or department proctor.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-                  placeholder="e.g. CS204-XYZ"
-                  className="w-full h-11 sm:h-10 px-3 bg-surface-container-low text-on-surface rounded-xl font-mono text-xs uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-secondary focus:bg-white transition-all border border-surface-container-high"
-                />
-              </div>
-              <button
-                onClick={handleValidateToken}
-                disabled={isValidating || !tokenInput.trim()}
-                className="w-full sm:w-auto h-11 sm:h-10 px-5 bg-primary text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all disabled:opacity-50"
-              >
-                {isValidating ? (
-                  <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
-                ) : (
-                  <>
-                    <span>Verify &amp; Enter</span>
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {tokenStatus && (
-              <div className="p-3 rounded-xl bg-error-container text-error text-xs flex items-start gap-2.5 leading-relaxed font-medium">
-                <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-0.5">error</span>
-                <span className="break-words">{tokenStatus}</span>
-              </div>
-            )}
-          </section>
-
-          {/* Real Scheduled Assessments */}
-          <section id="available-exams" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary text-[20px]">event_upcoming</span>
-                <h3 className="text-sm font-semibold text-on-surface">Published Examinations</h3>
-              </div>
-              <span className="text-xs text-on-surface-variant font-medium">
-                {dashboardData?.scheduledExams?.length ?? 0} Available
+              <span className="text-[10px] sm:text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
+                ACCESS DISPATCH
               </span>
             </div>
 
-            {dashboardData?.scheduledExams && dashboardData.scheduledExams.length > 0 ? (
-              <div className="space-y-2">
-                {dashboardData.scheduledExams.map((exam: any) => (
-                  <div
-                    key={exam.id}
-                    className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            {/* Active In-Progress Attempt Card (if any exists) */}
+            {dashboardData?.activeAttempt && (
+              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm border-2 border-secondary relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error-container text-error text-xs font-mono font-semibold">
+                    <span className="w-2 h-2 rounded-full bg-error animate-pulse" />
+                    SESSION IN PROGRESS
+                  </span>
+                  <span className="text-xs font-mono text-secondary font-bold">ACTIVE ATTEMPT</span>
+                </div>
+
+                <div className="space-y-1">
+                  <h2 className="text-lg sm:text-xl font-bold text-on-surface">{dashboardData.activeAttempt.exam?.title || 'Examination Attempt'}</h2>
+                  <p className="text-xs sm:text-sm text-secondary font-medium">Session is live. Anti-cheating telemetry active.</p>
+                </div>
+
+                <div className="mt-4">
+                  <Link
+                    href={`/student/attempts/${dashboardData.activeAttempt.id}`}
+                    className="w-full h-11 bg-secondary text-white rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-secondary/90 active:scale-[0.99] transition-all shadow-sm"
                   >
-                    <div>
-                      <h4 className="text-sm font-semibold text-on-surface">{exam.title}</h4>
-                      <div className="flex items-center gap-3 text-xs text-on-surface-variant font-mono mt-1 flex-wrap">
-                        <span>Duration: {exam.durationMinutes} min</span>
-                        {exam.availableFrom && (
-                          <span>From: {new Date(exam.availableFrom).toLocaleDateString()}</span>
-                        )}
-                      </div>
-                    </div>
-                    <Link
-                      href={`/student/exams/${exam.id}/instructions`}
-                      className="w-full sm:w-auto text-center px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-secondary transition-colors"
-                    >
-                      View Instructions
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-surface-container-lowest p-6 rounded-xl border border-surface-container-high/60 text-center text-xs text-on-surface-variant">
-                No examinations currently published. Enter your access key above when your test begins.
+                    <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                    <span>Resume Live Examination Workspace</span>
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  </Link>
+                </div>
               </div>
             )}
+
+            {/* Assessment Key Entry Card */}
+            <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm border border-surface-container-high/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined text-[16px]">vpn_key</span>
+                  </div>
+                  <h4 className="text-sm font-semibold text-on-surface">Enter Assessment Key</h4>
+                </div>
+                <span className="text-[10px] sm:text-xs font-mono text-on-surface-variant font-medium">SINGLE-USE KEY</span>
+              </div>
+
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Exams in FocusAssess are private and unlocked using the single-use assessment key provided by your instructor or proctor.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. CS204-XYZ"
+                    className="w-full h-11 sm:h-10 px-3 bg-surface-container-low text-on-surface rounded-xl font-mono text-xs uppercase tracking-widest focus:outline-none focus:ring-1 focus:ring-secondary focus:bg-white transition-all border border-surface-container-high"
+                  />
+                </div>
+                <button
+                  onClick={handleValidateToken}
+                  disabled={isValidating || !tokenInput.trim()}
+                  className="w-full sm:w-auto h-11 sm:h-10 px-5 bg-primary text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all disabled:opacity-50"
+                >
+                  {isValidating ? (
+                    <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
+                  ) : (
+                    <>
+                      <span>Verify &amp; Enter</span>
+                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {tokenStatus && (
+                <div className="p-3 rounded-xl bg-error-container text-error text-xs flex items-start gap-2.5 leading-relaxed font-medium">
+                  <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-0.5">error</span>
+                  <span className="break-words">{tokenStatus}</span>
+                </div>
+              )}
+
+              <div className="p-3 rounded-xl bg-surface-container-low/70 border border-surface-container-high/40 flex items-start gap-2 text-[11px] text-on-surface-variant">
+                <span className="material-symbols-outlined text-[16px] text-primary flex-shrink-0 mt-0.5">info</span>
+                <span>
+                  <strong>One-Time Use Policy:</strong> Each examination key can only be used once per candidate. Once started or submitted, the key cannot be reused.
+                </span>
+              </div>
+            </div>
           </section>
 
-          {/* Real Recent Submissions */}
+          {/* Section 2: My Taken Examinations & Submissions */}
           <section id="recent-submissions" className="space-y-3 scroll-mt-20">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-on-tertiary-container text-[20px]">assignment_turned_in</span>
-                <h3 className="text-sm font-semibold text-on-surface">Recent Submissions &amp; Results</h3>
+                <span className="material-symbols-outlined text-primary text-[20px]">history_edu</span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-on-surface">My Taken Examinations</h3>
+                  <p className="text-xs text-on-surface-variant">Your historical test attempts, evaluation outcomes, and integrity scores.</p>
+                </div>
               </div>
-              <span className="text-xs text-secondary font-semibold font-mono">
-                {dashboardData?.recentSubmissions?.length ?? 0} Total
+              <span className="text-xs text-primary font-semibold font-mono px-2.5 py-1 rounded-full bg-surface-container">
+                {(dashboardData?.myExams?.length ?? dashboardData?.recentSubmissions?.length ?? 0)} Recorded
               </span>
             </div>
 
-            {dashboardData?.recentSubmissions && dashboardData.recentSubmissions.length > 0 ? (
-              <div className="space-y-2">
-                {dashboardData.recentSubmissions.map((sub: any) => (
-                  <div
-                    key={sub.id}
-                    className="bg-surface-container-lowest p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-on-tertiary-container flex-shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">
-                          {sub.status === 'terminated_suspicious' ? 'gavel' : 'check_box'}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="text-sm font-semibold text-on-surface truncate">{sub.examTitle}</h5>
-                        <div className="flex items-center gap-2 text-xs text-on-surface-variant font-mono flex-wrap">
-                          <span>Status: {sub.status}</span>
-                          <span>•</span>
-                          <span>Trust: {sub.trustScore}%</span>
+            {(dashboardData?.myExams?.length || dashboardData?.recentSubmissions?.length) ? (
+              <div className="space-y-2.5">
+                {(dashboardData?.myExams || dashboardData?.recentSubmissions).map((sub: any) => {
+                  const isTerminated = sub.status === 'terminated_suspicious' || sub.status === 'terminated';
+                  const isGraded = sub.gradingStatus === 'graded' && sub.resultsReleased;
+                  const isEvaluating = !isTerminated && !isGraded;
+
+                  return (
+                    <div
+                      key={sub.id}
+                      className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-surface-container-highest transition-colors"
+                    >
+                      <div className="flex items-start sm:items-center gap-3 min-w-0">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            isTerminated
+                              ? 'bg-rose-500/10 text-rose-600'
+                              : isGraded
+                              ? 'bg-emerald-500/10 text-emerald-600'
+                              : 'bg-amber-500/10 text-amber-600'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            {isTerminated ? 'gavel' : isGraded ? 'task_alt' : 'hourglass_top'}
+                          </span>
+                        </div>
+                        <div className="min-w-0 space-y-1">
+                          <h5 className="text-sm font-bold text-on-surface truncate">{sub.examTitle}</h5>
+                          <div className="flex items-center gap-2 text-xs text-on-surface-variant font-mono flex-wrap">
+                            <span className="capitalize">{sub.status?.replace('_', ' ')}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px]">shield</span>
+                              <span>Trust: {sub.trustScore ?? 100}%</span>
+                            </span>
+                            {sub.submittedAt && (
+                              <>
+                                <span>•</span>
+                                <span>{new Date(sub.submittedAt).toLocaleDateString()}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
+
+                      <div className="w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start pt-2 sm:pt-0 border-t sm:border-0 border-surface-container-high flex-shrink-0 gap-1.5">
+                        {isGraded ? (
+                          <>
+                            <div className="text-right">
+                              <span className="text-sm sm:text-base font-mono font-bold text-on-surface block">
+                                {sub.totalMarks ?? 0} / {sub.maxMarks ?? 100}
+                              </span>
+                              {sub.percentageScore !== null && (
+                                <span className="text-[11px] font-mono text-emerald-600 font-semibold block">
+                                  {sub.percentageScore}% Score
+                                </span>
+                              )}
+                            </div>
+                            <Link
+                              href={`/student/attempts/${sub.id}/results`}
+                              className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-primary transition-colors flex items-center gap-1"
+                            >
+                              <span>View Results</span>
+                              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                            </Link>
+                          </>
+                        ) : isTerminated ? (
+                          <>
+                            <span className="text-xs font-mono text-rose-600 font-bold">Terminated (Security)</span>
+                            <Link
+                              href={`/student/attempts/${sub.id}/terminated`}
+                              className="text-xs text-rose-600 hover:underline font-semibold"
+                            >
+                              Incident Report
+                            </Link>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-end gap-1">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              Under Evaluation
+                            </span>
+                            <span className="text-[10px] text-on-surface-variant font-mono">Results pending release</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start pt-2 sm:pt-0 border-t sm:border-0 border-surface-container-high flex-shrink-0">
-                      {sub.resultsReleased ? (
-                        <>
-                          <span className="text-sm font-mono font-bold text-on-surface">
-                            {sub.totalMarks ?? 0}/{sub.maxMarks ?? 100}
-                          </span>
-                          <Link
-                            href={`/student/attempts/${sub.id}/results`}
-                            className="text-xs text-secondary font-semibold hover:underline"
-                          >
-                            View Result
-                          </Link>
-                        </>
-                      ) : (
-                        <span className="text-xs text-on-surface-variant font-mono">Evaluation Pending</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <div className="bg-surface-container-lowest p-6 rounded-xl border border-surface-container-high/60 text-center text-xs text-on-surface-variant">
-                No past submissions found for this account.
+              <div className="bg-surface-container-lowest p-8 rounded-2xl border border-surface-container-high/60 text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant mx-auto">
+                  <span className="material-symbols-outlined text-[24px]">history_edu</span>
+                </div>
+                <h4 className="text-sm font-bold text-on-surface">No Past Examinations Taken</h4>
+                <p className="text-xs text-on-surface-variant max-w-sm mx-auto">
+                  You have not completed any examinations on this account yet. When you enter an assessment key above and complete an exam, your attempts and grades will appear here.
+                </p>
               </div>
             )}
           </section>

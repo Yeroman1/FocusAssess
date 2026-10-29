@@ -74,7 +74,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
   // Role-specific navigation links for the active sidebar
   const studentNavItems: NavItem[] = [
     { label: 'Overview', href: '/student/dashboard', icon: 'dashboard' },
-    { label: 'Available Exams', href: '/student/dashboard#available-exams', icon: 'assignment' },
+    { label: 'Available Exams', href: '/student/dashboard#available-exams', icon: 'key' },
     { label: 'My Submissions', href: '/student/dashboard#recent-submissions', icon: 'history_edu' },
     { label: 'Integrity Rules', href: '/rules', icon: 'gavel' },
   ];
