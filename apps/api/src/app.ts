@@ -35,11 +35,25 @@ export function createApp(): Express {
 
   app.use(express.json({ limit: '2mb' }));
 
+  // Prevent caching of authenticated API responses
+  app.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  });
+
+  // Request logger
+  app.use((req, _res, next) => {
+    console.log(`[API Request] ${req.method} ${req.url} - Referer: ${req.headers.referer}`);
+    next();
+  });
+
   // Health check
   app.get('/health', (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
-      service: 'pyassess-api',
+      service: 'focusassess-api',
       timestamp: new Date().toISOString(),
     });
   });
