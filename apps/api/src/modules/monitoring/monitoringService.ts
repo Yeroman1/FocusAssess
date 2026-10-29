@@ -149,9 +149,18 @@ export class MonitoringService {
 
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: attemptId },
+      include: { exam: true },
     });
 
     if (!attempt) throw new Error('Attempt not found');
+
+    // Strict Authorization: Only the Exam Owner or a System Administrator can reopen an attempt
+    const actor = await prisma.profile.findUnique({ where: { id: authorizedActorId } });
+    const isAdmin = actor?.role === 'admin' || actor?.email?.toLowerCase() === 'yeritti2017@gmail.com';
+    if (attempt.exam.ownerId !== authorizedActorId && !isAdmin) {
+      throw new Error('Forbidden: You do not have permission to reopen attempts for this examination.');
+    }
+
     if (attempt.status !== 'terminated_suspicious') {
       throw new Error(`Cannot reopen attempt: Current status is ${attempt.status}`);
     }

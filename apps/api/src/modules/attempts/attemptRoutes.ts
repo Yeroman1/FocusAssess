@@ -5,7 +5,16 @@ import { GradingService } from '../grading/gradingService.js';
 import { prisma } from '../../utils/prisma.js';
 import { z } from 'zod';
 
+import { createRateLimiter } from '../../middleware/rateLimiter.js';
+
 const router = Router();
+
+// Strict anti-brute-force rate limiter for exam access keys (10 attempts per minute per client)
+const keyValidationLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: 'Too many examination key attempts. Please wait 1 minute before trying again.',
+});
 
 const ValidateKeySchema = z.object({
   key: z.string().min(1, 'Assessment key is required'),
@@ -15,8 +24,8 @@ const AutosaveSchema = z.object({
   sourceCode: z.string(),
 });
 
-// 1. Validate exam key and student eligibility
-router.post('/exam-entry/validate-key', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+// 1. Validate exam key and student eligibility (with brute-force protection)
+router.post('/exam-entry/validate-key', keyValidationLimiter, requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parseResult = ValidateKeySchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -60,7 +69,7 @@ router.get('/exams/:examId/instructions', requireAuth, async (req: Authenticated
 
     if (!exam) return res.status(404).json({ error: 'Exam not found' });
 
-    // Single-use key guard: students who already started or completed this exam cannot access instructions to enter again
+    // Single-use key guard & entry closed guard:
     if (req.user!.role === 'student') {
       const priorAttempt = await prisma.examAttempt.findFirst({
         where: { examId: req.params.examId, studentId: req.user!.id },
@@ -68,18 +77,30 @@ router.get('/exams/:examId/instructions', requireAuth, async (req: Authenticated
       });
 
       if (priorAttempt) {
+        if (priorAttempt.status === 'in_progress') {
+          return res.status(200).json({
+            canResume: true,
+            attemptId: priorAttempt.id,
+            message: 'You have an active session in progress for this exam.',
+          });
+        }
         const detail =
           priorAttempt.status === 'terminated_suspicious'
             ? 'Your previous attempt was terminated for an integrity policy violation.'
-            : priorAttempt.status === 'submitted'
-            ? 'You have already completed and submitted this examination.'
-            : 'You have already started this examination and have an active attempt.';
+            : 'You have already completed and submitted this examination.';
 
         return res.status(403).json({
           error: `${detail} Examination keys are single-use and cannot be used to re-enter.`,
           hasPriorAttempt: true,
           attemptId: priorAttempt.id,
           attemptStatus: priorAttempt.status,
+        });
+      }
+
+      // If no prior attempt, check if new candidate entry is closed / unpublished
+      if (exam.status !== 'published') {
+        return res.status(403).json({
+          error: 'Entry to this examination has been closed by the instructor. New candidates are not allowed to enter.',
         });
       }
     }
@@ -242,7 +263,7 @@ router.get('/attempts/:attemptId/results', requireAuth, async (req: Authenticate
     const attempt = await prisma.examAttempt.findUnique({
       where: { id: req.params.attemptId },
       include: {
-        exam: { select: { title: true, resultsReleasedAt: true } },
+        exam: { select: { title: true, ownerId: true, resultsReleasedAt: true } },
         gradingResults: {
           select: {
             questionId: true,
@@ -256,8 +277,16 @@ router.get('/attempts/:attemptId/results', requireAuth, async (req: Authenticate
     });
 
     if (!attempt) return res.status(404).json({ error: 'Attempt not found' });
-    if (attempt.studentId !== req.user!.id && req.user!.role === 'student') {
-      return res.status(403).json({ error: 'Forbidden' });
+
+    // Strict Authorization:
+    // - Students can ONLY view their own attempt results.
+    // - Instructors can ONLY view results for exams they own.
+    // - Admins can view any attempt results.
+    if (req.user!.role === 'student' && attempt.studentId !== req.user!.id) {
+      return res.status(403).json({ error: 'Forbidden: You can only view your own examination results.' });
+    }
+    if (req.user!.role === 'instructor' && attempt.exam.ownerId !== req.user!.id) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to view results for this examination.' });
     }
 
     // Result release gate: Students can ONLY see marks if results have been released!

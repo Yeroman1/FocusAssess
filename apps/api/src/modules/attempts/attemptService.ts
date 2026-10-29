@@ -37,8 +37,69 @@ export class AttemptService {
 
     const exam = examKey.exam;
 
+    // Check account status
+    const student = await prisma.profile.findUnique({ where: { id: studentId } });
+    if (!student || student.status === 'suspended') {
+      throw new Error('Student account is suspended or ineligible');
+    }
+
+    // 1. Check if student has ALREADY entered and started an attempt for this examination
+    const existingAttempts = await prisma.examAttempt.findMany({
+      where: { examId: exam.id, studentId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingAttempts.length > 0) {
+      const latestAttempt = existingAttempts[0];
+      if (latestAttempt.status === 'in_progress') {
+        if (new Date() > latestAttempt.deadlineAt) {
+          await this.expireAttempt(latestAttempt.id);
+          throw new Error('Your previous examination session has expired.');
+        }
+        // Candidate entered before the exam was closed: allow them to resume!
+        return {
+          exam,
+          activeAttempt: latestAttempt,
+          canResume: true,
+          attemptsCount: existingAttempts.length,
+        };
+      }
+      if (latestAttempt.status === 'terminated_suspicious') {
+        throw new Error(
+          'Your previous session for this examination was terminated for an integrity violation. This single-use examination key has already been consumed and cannot be reused.'
+        );
+      }
+      if (latestAttempt.status === 'submitted') {
+        throw new Error(
+          'You have already completed and submitted this examination. Examination keys are single-use and cannot be used again.'
+        );
+      }
+      throw new Error(
+        'This examination key is single-use and was already used to start your exam. You cannot enter this examination again with this key.'
+      );
+    }
+
+    // 2. Check if this student has ALREADY consumed this specific examination key
+    const keyUsage = await prisma.examKeyUsage.findUnique({
+      where: {
+        examKeyId_studentId: {
+          examKeyId: examKey.id,
+          studentId,
+        },
+      },
+    });
+
+    if (keyUsage) {
+      throw new Error(
+        'This examination key is single-use and has already been used by your account. You cannot enter this examination again with this key.'
+      );
+    }
+
+    // 3. Check if exam is open for NEW entries (if instructor closed or unpublished, block entry)
     if (exam.status !== 'published') {
-      throw new Error('This examination is currently not open for attempts');
+      throw new Error(
+        'Entry to this examination has been closed by the instructor. New candidate entries are not permitted even with a valid access key.'
+      );
     }
 
     const now = new Date();
@@ -48,12 +109,6 @@ export class AttemptService {
 
     if (exam.availableUntil && now > exam.availableUntil) {
       throw new Error('This examination window has closed');
-    }
-
-    // Check account status
-    const student = await prisma.profile.findUnique({ where: { id: studentId } });
-    if (!student || student.status === 'suspended') {
-      throw new Error('Student account is suspended or ineligible');
     }
 
     // Check class enrollment eligibility if exam is bound to specific classes
@@ -70,50 +125,6 @@ export class AttemptService {
       if (!enrollment) {
         throw new Error('You are not enrolled in the authorized class roster for this exam');
       }
-    }
-
-    // 1. Check if this student has ALREADY consumed this specific examination key
-    const keyUsage = await prisma.examKeyUsage.findUnique({
-      where: {
-        examKeyId_studentId: {
-          examKeyId: examKey.id,
-          studentId,
-        },
-      },
-    });
-
-    if (keyUsage) {
-      throw new Error(
-        'This examination key is single-use and has already been used by your account. You cannot enter this examination again with this key.'
-      );
-    }
-
-    // 2. Check if student has ALREADY entered and started an attempt for this examination
-    const existingAttempts = await prisma.examAttempt.findMany({
-      where: { examId: exam.id, studentId },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (existingAttempts.length > 0) {
-      const latestAttempt = existingAttempts[0];
-      if (latestAttempt.status === 'in_progress') {
-        throw new Error(
-          'You have already started this examination and have an active session in progress. This single-use key cannot be entered again. Please resume your live exam directly from your dashboard.'
-        );
-      }
-      if (latestAttempt.status === 'terminated_suspicious') {
-        throw new Error(
-          'Your previous session for this examination was terminated for an integrity violation. This single-use examination key has already been consumed and cannot be reused.'
-        );
-      }
-      if (latestAttempt.status === 'submitted') {
-        throw new Error(
-          'You have already completed and submitted this examination. Examination keys are single-use and cannot be used again.'
-        );
-      }
-      throw new Error(
-        'This examination key is single-use and was already used to start your exam. You cannot enter this examination again with this key.'
-      );
     }
 
     return {
@@ -139,14 +150,14 @@ export class AttemptService {
       },
     });
 
-    if (!exam || exam.status !== 'published') {
-      throw new Error('Exam is not available');
+    if (!exam) {
+      throw new Error('Examination not found');
     }
 
     const currentVersion = exam.versions[0];
     if (!currentVersion) throw new Error('Exam version not found');
 
-    // Check if active attempt already exists or if student already started an attempt
+    // 1. Check if active attempt already exists or if student already started an attempt
     const existingAttempts = await prisma.examAttempt.findMany({
       where: {
         examId,
@@ -162,10 +173,18 @@ export class AttemptService {
         if (new Date() > latest.deadlineAt) {
           return await this.expireAttempt(latest.id);
         }
+        // Student entered before - permit them to resume!
         return latest;
       }
       throw new Error(
         'You have already started or completed this examination. Examination access keys are single-use and cannot be used to start or re-enter an exam.'
+      );
+    }
+
+    // 2. New candidate entry check: If instructor closed/unpublished the exam, reject new entries
+    if (exam.status !== 'published') {
+      throw new Error(
+        'Entry to this examination has been closed by the instructor. New candidate entries are not permitted.'
       );
     }
 
@@ -307,15 +326,19 @@ export class AttemptService {
     if (!attempt) throw new Error('Attempt not found');
     if (attempt.studentId !== studentId) throw new Error('Forbidden');
 
-    if (attempt.status === 'submitted') {
+    if (attempt.status === 'submitted' || attempt.status === 'expired') {
       return attempt; // Idempotent return
     }
 
-    if (attempt.status === 'terminated_suspicious') {
-      throw new Error('This attempt was halted by automated proctoring safeguard and cannot be manually submitted');
+    if (attempt.status !== 'in_progress') {
+      throw new Error(`Cannot submit attempt: Examination status is ${attempt.status}`);
     }
 
     const submittedAt = new Date();
+    // Strict 60-second network latency grace window beyond server deadline
+    const GRACE_PERIOD_MS = 60 * 1000;
+    const isPastDeadline = submittedAt.getTime() > (attempt.deadlineAt.getTime() + GRACE_PERIOD_MS);
+    const finalStatus: AttemptStatus = isPastDeadline ? 'expired' : 'submitted';
 
     // Compute hash of final answers as immutable snapshot reference
     const answersData = attempt.answers
@@ -328,7 +351,7 @@ export class AttemptService {
       const finalized = await tx.examAttempt.update({
         where: { id: attemptId },
         data: {
-          status: 'submitted',
+          status: finalStatus,
           submittedAt,
           gradingStatus: 'pending',
         },

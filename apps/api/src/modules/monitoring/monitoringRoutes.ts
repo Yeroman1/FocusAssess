@@ -37,20 +37,30 @@ router.post('/attempts/:attemptId/events', requireAuth, async (req: Authenticate
   return res.json(result);
 });
 
-// Get trust status
+// Get trust status (Strictly authorized to the attempt candidate, exam owner, or admin)
 router.get('/attempts/:attemptId/trust-status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: req.params.attemptId },
     select: {
       id: true,
+      studentId: true,
       trustScore: true,
       status: true,
       terminationReason: true,
       terminatedAt: true,
+      exam: { select: { ownerId: true } },
     },
   });
 
   if (!attempt) return res.status(404).json({ error: 'Attempt not found' });
+
+  const user = req.user!;
+  if (user.role === 'student' && attempt.studentId !== user.id) {
+    return res.status(403).json({ error: 'Forbidden: You cannot access telemetry for another candidate.' });
+  }
+  if (user.role === 'instructor' && attempt.exam.ownerId !== user.id) {
+    return res.status(403).json({ error: 'Forbidden: You cannot access telemetry for another instructor\'s exam.' });
+  }
 
   return res.json({
     attemptId: attempt.id,
