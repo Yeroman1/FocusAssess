@@ -20,18 +20,27 @@ export function compareOutputs(
     return actual === expected;
   }
 
+  // Standardize line endings and trim outer whitespace
+  const normActual = actual.replace(/\r\n/g, '\n').trim().replace(/^['"]|['"]$/g, '');
+  const normExpected = expected.replace(/\r\n/g, '\n').trim().replace(/^['"]|['"]$/g, '');
+
   if (mode === 'NUMERIC_TOLERANCE') {
-    const actNum = parseFloat(actual.trim());
-    const expNum = parseFloat(expected.trim());
+    const actNum = parseFloat(normActual);
+    const expNum = parseFloat(normExpected);
     if (!isNaN(actNum) && !isNaN(expNum)) {
       return Math.abs(actNum - expNum) <= 1e-4;
     }
   }
 
+  // Resilient boolean comparison for True/False questions
+  if (
+    normExpected.toLowerCase() === 'true' ||
+    normExpected.toLowerCase() === 'false'
+  ) {
+    return normActual.toLowerCase() === normExpected.toLowerCase();
+  }
+
   // Default: TRIMMED_TEXT
-  // Standardize line endings and trim outer whitespace
-  const normActual = actual.replace(/\r\n/g, '\n').trim();
-  const normExpected = expected.replace(/\r\n/g, '\n').trim();
   return normActual === normExpected;
 }
 
