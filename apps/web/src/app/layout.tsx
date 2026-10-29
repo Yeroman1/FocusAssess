@@ -1,9 +1,17 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'PyAssess — Secure Python Examination & Assessment Platform',
+  title: 'FocusAssess — Secure Python Examination & Assessment Platform',
   description: 'Enterprise-grade secure Python examinations, browser anti-cheating telemetry, and automated unit test grading.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#0f172a',
 };
 
 import { AuthProvider } from '@/context/AuthContext';
@@ -27,7 +35,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-surface font-sans text-on-surface min-h-screen flex flex-col antialiased">
+      <body className="bg-surface font-sans text-on-surface min-h-screen w-full flex flex-col antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
