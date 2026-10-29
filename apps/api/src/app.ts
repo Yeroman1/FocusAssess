@@ -10,6 +10,8 @@ import { monitoringRoutes } from './modules/monitoring/monitoringRoutes.js';
 import { instructorRoutes } from './modules/instructor/instructorRoutes.js';
 import { adminRoutes } from './modules/admin/adminRoutes.js';
 
+import { createRateLimiter } from './middleware/rateLimiter.js';
+
 export function createApp(): Express {
   const app = express();
 
@@ -17,6 +19,14 @@ export function createApp(): Express {
   app.use(helmet({
     contentSecurityPolicy: false, // Let Next.js handle frontend CSP
   }));
+
+  // Global API rate limiter (180 requests per minute)
+  const globalLimiter = createRateLimiter({
+    windowMs: 60 * 1000,
+    max: 180,
+    message: 'Too many requests from this network. Please slow down.',
+  });
+  app.use('/api/v1', globalLimiter);
 
   // CORS configuration
   app.use(cors({

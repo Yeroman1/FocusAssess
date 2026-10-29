@@ -42,7 +42,8 @@ export async function executePythonSandbox(request: RunnerJobRequest): Promise<R
       let stderrBytes = 0;
       let executionStatus: RunnerExecutionStatus = 'SUCCESS';
 
-      const child = spawn(pythonCmd, ['-B', '-u', scriptPath], {
+      // Run Python in isolated mode (-I) to ignore PYTHONPATH, user site-packages, and external state
+      const child = spawn(pythonCmd, ['-I', '-B', '-u', scriptPath], {
         cwd: tempDir,
         env: cleanEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
