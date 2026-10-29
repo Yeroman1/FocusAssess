@@ -1,15 +1,16 @@
 {
-  "name": "pyassess-monorepo",
+  "name": "focusassess-monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "PyAssess - Secure Python Examination and Automatic Assessment Platform",
+  "description": "FocusAssess - Secure Python Examination and Automatic Assessment Platform",
   "workspaces": [
     "packages/*",
     "apps/*",
     "services/*"
   ],
   "scripts": {
-    "dev": "npm run dev --workspaces --if-present",
+    "dev": "node scripts/dev.mjs",
+    "dev:all": "node scripts/dev.mjs",
     "dev:api": "npm run dev --workspace=@pyassess/api",
     "dev:web": "npm run dev --workspace=@pyassess/web",
     "dev:runner": "npm run dev --workspace=@pyassess/python-runner",

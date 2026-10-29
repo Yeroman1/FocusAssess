@@ -6,11 +6,12 @@ node_modules/
 # Testing
 coverage/
 
-# Next.js build output
+# Build output & caches
 .next/
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # Logs
 logs/
