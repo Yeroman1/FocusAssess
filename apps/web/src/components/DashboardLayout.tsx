@@ -24,10 +24,38 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currentHash, setCurrentHash] = useState('');
 
   // Close mobile drawer on route change
   useEffect(() => {
     setMobileOpen(false);
+  }, [pathname]);
+
+  // Sync currentHash from window location
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentHash(window.location.hash || '');
+    }
+
+    const updateHash = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentHash(window.location.hash || '');
+      }
+    };
+
+    window.addEventListener('hashchange', updateHash);
+    window.addEventListener('popstate', updateHash);
+    return () => {
+      window.removeEventListener('hashchange', updateHash);
+      window.removeEventListener('popstate', updateHash);
+    };
+  }, []);
+
+  // Update hash when pathname changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentHash(window.location.hash || '');
+    }
   }, [pathname]);
 
   // Determine user's effective role & active portal
@@ -104,6 +132,29 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
     },
   }[activePortalRole];
 
+  // Determine if a specific navItem is the SINGLE active item
+  const isItemActive = (item: NavItem) => {
+    const [itemPath, itemHash] = item.href.split('#');
+    const hasHash = Boolean(itemHash);
+
+    // If pathname doesn't match, this item is not active
+    if (pathname !== itemPath) {
+      return false;
+    }
+
+    // Check if the current URL has a hash matching any item in this navItems list
+    const hasMatchingHashInList = navItems.some(
+      (ni) => ni.href.includes('#') && '#' + ni.href.split('#')[1] === currentHash
+    );
+
+    if (hasMatchingHashInList) {
+      return hasHash && '#' + itemHash === currentHash;
+    }
+
+    // Default: if no hash in URL, only the root item (without hash) is active
+    return !hasHash;
+  };
+
   // Reusable Sidebar Content for both Desktop and Mobile drawer
   const renderSidebarContent = (isMobile = false) => (
     <div className="flex flex-col h-full justify-between">
@@ -170,8 +221,8 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
                 onClick={() => setMobileOpen(false)}
                 className={`py-1.5 rounded-lg text-center text-[11px] font-mono font-semibold transition-colors ${
                   activePortalRole === 'admin'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface'
+                    ? 'bg-black text-white shadow-sm'
+                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface hover:bg-slate-200'
                 }`}
               >
                 Admin
@@ -181,8 +232,8 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
                 onClick={() => setMobileOpen(false)}
                 className={`py-1.5 rounded-lg text-center text-[11px] font-mono font-semibold transition-colors ${
                   activePortalRole === 'instructor'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface'
+                    ? 'bg-black text-white shadow-sm'
+                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface hover:bg-slate-200'
                 }`}
               >
                 Teacher
@@ -192,8 +243,8 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
                 onClick={() => setMobileOpen(false)}
                 className={`py-1.5 rounded-lg text-center text-[11px] font-mono font-semibold transition-colors ${
                   activePortalRole === 'student'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface'
+                    ? 'bg-black text-white shadow-sm'
+                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface hover:bg-slate-200'
                 }`}
               >
                 Student
@@ -209,24 +260,28 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
           </span>
 
           {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href.includes('#') && pathname === item.href.split('#')[0]);
+            const active = isItemActive(item);
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`h-10 px-3 rounded-xl flex items-center justify-between text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+                onClick={() => {
+                  setMobileOpen(false);
+                  const [, itemHash] = item.href.split('#');
+                  setCurrentHash(itemHash ? '#' + itemHash : '');
+                }}
+                className={`group h-10 px-3 rounded-xl flex items-center justify-between text-xs transition-all duration-150 ${
+                  active
+                    ? 'bg-black text-white font-bold shadow-md cursor-default'
+                    : 'text-on-surface-variant font-medium bg-transparent hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:translate-x-1 active:scale-[0.99]'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <span
-                    className={`material-symbols-outlined text-[18px] ${
-                      isActive ? 'text-white' : 'text-on-surface-variant'
+                    className={`material-symbols-outlined text-[18px] transition-colors ${
+                      active
+                        ? 'text-white'
+                        : 'text-on-surface-variant group-hover:text-black dark:group-hover:text-white'
                     }`}
                   >
                     {item.icon}
@@ -234,7 +289,13 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="px-2 py-0.5 rounded-full bg-secondary text-white font-mono text-[10px]">
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-mono text-[10px] transition-colors ${
+                      active
+                        ? 'bg-white/20 text-white font-bold'
+                        : 'bg-surface-container text-on-surface-variant group-hover:bg-black/10 group-hover:text-black'
+                    }`}
+                  >
                     {item.badge}
                   </span>
                 )}
@@ -314,7 +375,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
               href="/admin/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
                 activePortalRole === 'admin'
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-black text-white shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
               }`}
             >
@@ -324,7 +385,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
               href="/instructor/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
                 activePortalRole === 'instructor'
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-black text-white shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
               }`}
             >
@@ -334,7 +395,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
               href="/student/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
                 activePortalRole === 'student'
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-black text-white shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
               }`}
             >
@@ -347,7 +408,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
               href="/instructor/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
                 activePortalRole === 'instructor'
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-black text-white shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
               }`}
             >
@@ -357,7 +418,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
               href="/student/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
                 activePortalRole === 'student'
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-black text-white shadow-sm'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
               }`}
             >
