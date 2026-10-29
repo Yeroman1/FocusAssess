@@ -1,8 +1,60 @@
 import { Router, Response } from 'express';
-import { requireAuth, AuthenticatedRequest } from '../../middleware/auth.js';
+import { requireAuth, AuthenticatedRequest, invalidateUserAuthCache } from '../../middleware/auth.js';
+import { recordAuditEvent } from '../audit/auditService.js';
 import { prisma } from '../../utils/prisma.js';
 
 const router = Router();
+
+// 1. Terminate session on server and cancel in-progress exam attempts on logout
+router.post('/logout', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const user = req.user!;
+
+    // Invalidate in-memory server token cache
+    invalidateUserAuthCache(user.id);
+
+    // If student was inside an active exam session, terminate attempt for integrity
+    if (user.role === 'student') {
+      const activeAttempt = await prisma.examAttempt.findFirst({
+        where: { studentId: user.id, status: 'in_progress' },
+      });
+
+      if (activeAttempt) {
+        await prisma.examAttempt.update({
+          where: { id: activeAttempt.id },
+          data: {
+            status: 'terminated_suspicious',
+            terminatedAt: new Date(),
+            submittedAt: new Date(),
+            terminationReason: 'Session terminated: Student logged out of FocusAssess during active examination.',
+          },
+        });
+
+        await recordAuditEvent({
+          actorId: user.id,
+          action: 'EXAM_ATTEMPT_TERMINATED',
+          targetType: 'ExamAttempt',
+          targetId: activeAttempt.id,
+          metadata: { reason: 'User session logged out during examination' },
+        });
+      }
+    }
+
+    // Record logout audit event
+    await recordAuditEvent({
+      actorId: user.id,
+      action: 'USER_LOGGED_OUT',
+      targetType: 'Profile',
+      targetId: user.id,
+      metadata: { email: user.email },
+    });
+
+    return res.json({ success: true, message: 'Session terminated successfully.' });
+  } catch (err: any) {
+    console.error('[FocusAssess Logout Error]', err);
+    return res.status(500).json({ error: 'Failed to process session termination' });
+  }
+});
 
 // Current user profile
 router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
