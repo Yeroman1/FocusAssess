@@ -348,6 +348,17 @@ function ActiveExamWorkspaceContent() {
               </span>
             </div>
 
+            {/* Question Attached Photo / Diagram (Displayed before question text) */}
+            {activeQuestion.imageUrl && (
+              <div className="rounded-xl overflow-hidden border border-surface-container-high bg-surface-container-low shadow-sm p-2 flex justify-center">
+                <img
+                  src={activeQuestion.imageUrl}
+                  alt={activeQuestion.title ? `${activeQuestion.title} diagram` : 'Question diagram'}
+                  className="max-h-80 w-auto object-contain rounded-lg"
+                />
+              </div>
+            )}
+
             {/* Problem Statement Prose */}
             <div className="text-xs md:text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
               {activeQuestion.statement}

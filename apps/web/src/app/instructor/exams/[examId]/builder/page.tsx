@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -27,6 +27,7 @@ interface QuestionItem {
   constraints?: string;
   maxMarks: number;
   position: number;
+  imageUrl?: string | null;
   testCases?: TestCaseItem[];
 }
 
@@ -77,6 +78,34 @@ function ExamBuilderContent() {
   // State for True / False questions (single text field, auto-numbered)
   const [tfStatement, setTfStatement] = useState('');
   const [tfCorrect, setTfCorrect] = useState<boolean>(true);
+
+  // State for Question Attached Photo
+  const [qImage, setQImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const tfFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo size exceeds 5MB limit. Please select an image under 5MB.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setQImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setQImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (tfFileInputRef.current) tfFileInputRef.current.value = '';
+  };
 
   // Dynamic Test Cases for Python Code Question
   const [testCases, setTestCases] = useState<TestCaseItem[]>([
@@ -193,6 +222,9 @@ function ExamBuilderContent() {
     setShortAnswerExpected('');
     setTfStatement('');
     setTfCorrect(true);
+    setQImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (tfFileInputRef.current) tfFileInputRef.current.value = '';
     setIsAddingQuestion(false);
   };
 
@@ -256,6 +288,7 @@ function ExamBuilderContent() {
           body: JSON.stringify({
             title: autoTitle,
             statement: tfStatement.trim(),
+            imageUrl: qImage || null,
             inputDescription: 'Select whether the statement is True or False.',
             outputDescription: `Expected answer: ${expectedVal}`,
             constraints: 'True / False Question',
@@ -328,6 +361,7 @@ function ExamBuilderContent() {
           body: JSON.stringify({
             title: `[MCQ] ${qTitle.trim()}`,
             statement: formattedStatement,
+            imageUrl: qImage || null,
             inputDescription: 'Select the correct letter corresponding to the answer (A, B, C, D).',
             outputDescription: `Expected answer: ${String.fromCharCode(65 + mcqCorrectIdx)} (${correctOption})`,
             constraints: 'Single Choice Evaluation',
@@ -365,6 +399,7 @@ function ExamBuilderContent() {
           body: JSON.stringify({
             title: `[Multi-Select] ${qTitle.trim()}`,
             statement: formattedStatement,
+            imageUrl: qImage || null,
             inputDescription: 'Select all correct option letters (comma-separated, e.g. A, C).',
             outputDescription: `Expected answers: ${correctLetters}`,
             constraints: 'Multiple Choice Evaluation',
@@ -397,6 +432,7 @@ function ExamBuilderContent() {
           body: JSON.stringify({
             title: `[Output Prediction] ${qTitle.trim()}`,
             statement: qStatement,
+            imageUrl: qImage || null,
             inputDescription: 'None / Direct Output Prediction',
             outputDescription: 'Exact output string predicted from code execution',
             constraints: 'Standard Output Match',
@@ -417,6 +453,7 @@ function ExamBuilderContent() {
         body: JSON.stringify({
           title: qTitle.trim(),
           statement: qStatement.trim(),
+          imageUrl: qImage || null,
           inputDescription: qInputDesc.trim() || undefined,
           outputDescription: qOutputDesc.trim() || undefined,
           constraints: qConstraints.trim() || undefined,
@@ -1026,10 +1063,57 @@ function ExamBuilderContent() {
                       </span>
                       <span className="text-error">*</span>
                     </label>
-                    <span className="text-[10px] font-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">
-                      Auto-Numbered #{questions.length + 1}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {!qImage && (
+                        <div>
+                          <input
+                            ref={tfFileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            className="hidden"
+                            id="tf-question-photo"
+                          />
+                          <label
+                            htmlFor="tf-question-photo"
+                            className="inline-flex items-center gap-1 text-[11px] text-secondary hover:underline cursor-pointer font-medium font-mono"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">add_photo_alternate</span>
+                            <span>Add Photo</span>
+                          </label>
+                        </div>
+                      )}
+                      <span className="text-[10px] font-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">
+                        Auto-Numbered #{questions.length + 1}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Photo Preview displayed before text */}
+                  {qImage && (
+                    <div className="mb-3 relative max-w-sm rounded-xl overflow-hidden border border-surface-container-high bg-surface-container-low p-2">
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-surface-container-high/60">
+                        <span className="text-[10px] font-mono text-on-surface-variant flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px] text-secondary">image</span>
+                          <span>Attached Photo (displays before question statement)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="px-1.5 py-0.5 rounded text-error hover:bg-error-container/20 text-[10px] font-mono flex items-center gap-0.5"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">delete</span>
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                      <img
+                        src={qImage}
+                        alt="Question preview"
+                        className="max-h-48 w-auto object-contain rounded-lg"
+                      />
+                    </div>
+                  )}
+
                   <textarea
                     value={tfStatement}
                     onChange={(e) => setTfStatement(e.target.value)}
@@ -1138,11 +1222,58 @@ function ExamBuilderContent() {
                   </div>
                 </div>
 
-                {/* Problem Statement / Prompt */}
+                {/* Problem Statement / Prompt with optional photo */}
                 <div>
-                  <label className="text-xs font-bold text-on-surface block mb-1">
-                    Problem Statement / Prompt <span className="text-error">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-on-surface">
+                      Problem Statement / Prompt <span className="text-error">*</span>
+                    </label>
+                    {!qImage && (
+                      <div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                          className="hidden"
+                          id="question-photo"
+                        />
+                        <label
+                          htmlFor="question-photo"
+                          className="inline-flex items-center gap-1.5 text-xs text-secondary hover:underline cursor-pointer font-medium"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+                          <span>Add Photo to Question</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Attached Photo Preview (Displayed before the text question) */}
+                  {qImage && (
+                    <div className="mb-3 relative max-w-md rounded-xl overflow-hidden border border-surface-container-high bg-surface-container-low p-2">
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-surface-container-high/60">
+                        <span className="text-[11px] font-mono text-on-surface-variant flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[15px] text-secondary">image</span>
+                          <span>Attached Photo (displays before question text)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="px-2 py-0.5 rounded text-error hover:bg-error-container/20 text-xs font-mono flex items-center gap-0.5"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                      <img
+                        src={qImage}
+                        alt="Question diagram"
+                        className="max-h-60 w-auto object-contain rounded-lg"
+                      />
+                    </div>
+                  )}
+
                   <textarea
                     value={qStatement}
                     onChange={(e) => setQStatement(e.target.value)}
@@ -1598,6 +1729,16 @@ function ExamBuilderContent() {
                             {isTrueFalse ? 'True / False' : isCode ? 'Python Code' : 'Structured Item'}
                           </span>
                         </div>
+
+                        {q.imageUrl && (
+                          <div className="my-2 max-w-sm rounded-xl overflow-hidden border border-surface-container-high bg-surface-container p-1 shadow-sm">
+                            <img
+                              src={q.imageUrl}
+                              alt="Question diagram"
+                              className="max-h-48 w-auto object-contain rounded-lg"
+                            />
+                          </div>
+                        )}
 
                         <p className="text-xs text-on-surface-variant line-clamp-2">
                           {q.statement}
