@@ -43,7 +43,8 @@ export function createApp(): Express {
     allowedHeaders: ['Content-Type', 'Authorization', 'x-runner-secret'],
   }));
 
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Prevent caching of authenticated API responses
   app.use((_req, res, next) => {

@@ -24,6 +24,7 @@ export interface CreateQuestionDTO {
   maxMarks: number;
   position: number;
   manualReviewRequired?: boolean;
+  imageUrl?: string | null;
 }
 
 export interface CreateTestCaseDTO {
@@ -157,6 +158,7 @@ export class ExamService {
           maxMarks: dto.maxMarks,
           position: dto.position,
           manualReviewRequired: dto.manualReviewRequired ?? false,
+          imageUrl: dto.imageUrl || null,
         },
       });
 
@@ -233,6 +235,7 @@ export class ExamService {
         maxMarks: dto.maxMarks,
         position: dto.position,
         manualReviewRequired: dto.manualReviewRequired ?? false,
+        imageUrl: dto.imageUrl || null,
       },
     });
   }
@@ -333,6 +336,7 @@ export class ExamService {
           constraints: q.constraints,
           maxMarks: q.maxMarks,
           position: q.position,
+          imageUrl: q.imageUrl || null,
           testCases: q.testCases.map((tc) => ({
             id: tc.id,
             stdin: tc.stdin,

@@ -37,6 +37,7 @@ const CreateQuestionSchema = z.object({
   maxMarks: z.number().positive(),
   position: z.number().int().default(1),
   manualReviewRequired: z.boolean().default(false),
+  imageUrl: z.string().optional().nullable(),
 });
 
 const CreateTestCaseSchema = z.object({
@@ -57,6 +58,7 @@ const CreateQuestionWithTestCasesSchema = z.object({
   maxMarks: z.number().positive(),
   position: z.number().int().default(1),
   manualReviewRequired: z.boolean().default(false),
+  imageUrl: z.string().optional().nullable(),
   testCases: z.array(z.object({
     stdin: z.string().default(''),
     expectedOutput: z.string(),

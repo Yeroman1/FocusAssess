@@ -190,6 +190,7 @@ router.get('/attempts/:attemptId', requireAuth, async (req: AuthenticatedRequest
       constraints: q.constraints,
       maxMarks: q.maxMarks,
       position: q.position,
+      imageUrl: q.imageUrl || null,
       publicExamples: q.testCases.map((tc) => ({
         stdin: tc.stdin,
         expectedOutput: tc.expectedOutput,
