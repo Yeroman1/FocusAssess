@@ -84,6 +84,7 @@ export interface QuestionSummary {
   constraints?: string | null;
   maxMarks: number;
   manualReviewRequired: boolean;
+  imageUrl?: string | null;
   publicExamples: Array<{
     stdin: string;
     expectedOutput: string;

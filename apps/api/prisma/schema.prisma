@@ -181,6 +181,7 @@ model Question {
   maxMarks             Float
   position             Int
   manualReviewRequired Boolean     @default(false)
+  imageUrl             String?
 
   examVersion ExamVersion     @relation(fields: [examVersionId], references: [id], onDelete: Cascade)
   testCases   TestCase[]
