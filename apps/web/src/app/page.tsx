@@ -29,19 +29,19 @@ export default function HomePage() {
     <>
       <Navbar />
 
-      <main className="flex-1 pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 md:px-8 max-w-7xl mx-auto w-full flex flex-col justify-center">
+      <main className="flex-1 pt-20 sm:pt-28 pb-12 sm:pb-16 px-3 sm:px-6 md:px-8 max-w-7xl mx-auto w-full max-w-full min-w-0 overflow-x-hidden overflow-x-clip flex flex-col justify-center">
         {/* Hero Section */}
-        <div className="text-center max-w-3xl mx-auto space-y-4 sm:space-y-5 mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-secondary font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-ping" />
-            Supervised Runtime • Python 3.12 Kernel
+        <div className="text-center max-w-3xl mx-auto space-y-4 sm:space-y-5 mb-10 sm:mb-14 w-full max-w-full min-w-0">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-surface-container text-secondary font-mono text-[10px] sm:text-xs font-semibold uppercase tracking-wider max-w-full text-center">
+            <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-ping flex-shrink-0" />
+            <span className="truncate">Supervised Runtime • Python 3.12 Kernel</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-on-surface leading-tight">
+          <h1 className="text-xl sm:text-4xl md:text-5xl font-bold tracking-tight text-on-surface leading-tight break-words">
             Secure Python Examination &amp; Automatic Assessment Platform
           </h1>
 
-          <p className="text-sm sm:text-base md:text-lg text-on-surface-variant leading-relaxed">
+          <p className="text-xs sm:text-base md:text-lg text-on-surface-variant leading-relaxed px-1">
             Engineered for high-stakes university programming evaluations. Real-time browser telemetry,
             server-authoritative trust scoring, and behavioral test-case auto-grading in an isolated sandbox.
           </p>
@@ -100,7 +100,7 @@ export default function HomePage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                     />
                   </svg>
-                  <span>Sign in with Google to Continue</span>
+                  <span>Sign in with Google<span className="hidden xs:inline"> to Continue</span></span>
                 </button>
                 <p className="text-[11px] sm:text-xs text-on-surface-variant max-w-sm sm:max-w-none text-center">
                   Registration and authentication are completed via your institutional or student Google account.
@@ -111,7 +111,7 @@ export default function HomePage() {
         </div>
 
         {/* Platform Core Safeguards Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 max-w-5xl mx-auto w-full max-w-full min-w-0">
           <div className="p-4 sm:p-6 bg-surface-container-lowest rounded-2xl border border-surface-container-high flex flex-col space-y-2">
             <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary mb-2">
               <span className="material-symbols-outlined text-[22px]">shield_lock</span>
