@@ -41,8 +41,8 @@ function StudentResultsContent() {
     <>
       <Navbar />
 
-      <main className="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-2xl mx-auto">
-        <div className="flex flex-col w-full pb-8 space-y-4 sm:space-y-5">
+      <main className="flex-1 flex flex-col relative w-full max-w-full min-w-0 overflow-x-hidden overflow-x-clip pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-2xl mx-auto">
+        <div className="flex flex-col w-full max-w-full min-w-0 pb-8 space-y-4 sm:space-y-5">
           {/* Header Card */}
           <div className="bg-surface-container-lowest rounded-2xl p-4 sm:p-6 shadow-sm border border-surface-container-high/60 text-center space-y-3">
             {loading ? (
@@ -87,7 +87,7 @@ function StudentResultsContent() {
                       Score: {resultData.percentageScore ?? 0}% • Assessment Finalized
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 pt-3 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 text-left">
                       <div className="p-3 rounded-xl bg-surface-container-low">
                         <span className="text-[10px] uppercase font-mono text-on-surface-variant block">Integrity Trust Index</span>
                         <span className="text-sm font-bold font-mono text-on-tertiary-container">

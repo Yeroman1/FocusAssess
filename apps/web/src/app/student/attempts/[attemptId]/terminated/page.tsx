@@ -43,8 +43,8 @@ function ExamTerminatedContent() {
     <>
       <Navbar />
 
-      <main className="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-2xl mx-auto">
-        <div className="flex flex-col w-full pb-8 space-y-4">
+      <main className="flex-1 flex flex-col relative w-full max-w-2xl mx-auto pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-full min-w-0 overflow-x-hidden overflow-x-clip">
+        <div className="flex flex-col w-full max-w-full min-w-0 pb-8 space-y-4">
           {/* Automatic Integrity Guard Alert Banner */}
           <div className="bg-error-container rounded-2xl p-4 sm:p-5 shadow-sm border border-error/20">
             <div className="flex items-start gap-3.5">
@@ -66,13 +66,13 @@ function ExamTerminatedContent() {
 
           {/* Incident Reference Card */}
           <div className="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-surface-container-high/60 flex flex-col gap-2">
-            <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono gap-1">
               <span className="text-on-surface-variant uppercase">Incident Reference</span>
-              <span className="font-bold text-on-surface select-all">#ATT-{attemptId.slice(0, 8).toUpperCase()}-CS204</span>
+              <span className="font-bold text-on-surface select-all break-all">#ATT-{attemptId.slice(0, 8).toUpperCase()}-CS204</span>
             </div>
-            <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-mono gap-1">
               <span className="text-on-surface-variant uppercase">Timestamp</span>
-              <span className="text-on-surface">{new Date().toUTCString()}</span>
+              <span className="text-on-surface break-words">{new Date().toUTCString()}</span>
             </div>
           </div>
 
