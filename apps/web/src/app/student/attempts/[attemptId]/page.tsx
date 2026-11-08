@@ -29,6 +29,7 @@ function ActiveExamWorkspaceContent() {
   const [activeQuestionIdx, setActiveQuestionIdx] = useState(0);
   const [codeAnswers, setCodeAnswers] = useState<Record<string, string>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'both' | 'statement' | 'editor'>('both');
 
   // Timers and telemetry
   const [remainingSeconds, setRemainingSeconds] = useState<number>(5400); // 90 mins default
@@ -249,10 +250,10 @@ function ActiveExamWorkspaceContent() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col font-sans select-none">
+    <div className="min-h-screen bg-surface flex flex-col font-sans select-none w-full max-w-full overflow-x-hidden overflow-x-clip">
       {/* Pinned Exam Meta Sub-Header */}
-      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-surface-container-high px-3 sm:px-4 md:px-8 py-2 sm:py-2.5 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+      <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-surface-container-high px-3 sm:px-4 md:px-8 py-2 sm:py-2.5 shadow-sm w-full max-w-full overflow-x-hidden overflow-x-clip">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0">
           {/* Brand & Autosave Status */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span className="font-bold text-sm sm:text-base text-on-surface">FocusAssess</span>
@@ -266,7 +267,7 @@ function ActiveExamWorkspaceContent() {
           </div>
 
           {/* Trust Score & Authoritative Timer */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <div className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[11px] sm:text-xs font-mono font-bold ${
               trustScore >= 70 ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-error-container text-error'
             }`}>
@@ -285,15 +286,15 @@ function ActiveExamWorkspaceContent() {
       </header>
 
       {/* Main Workspace Layout */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex flex-col gap-3 sm:gap-4">
+      <main className="flex-1 max-w-7xl mx-auto w-full max-w-full px-3 sm:px-4 md:px-8 py-3 sm:py-4 flex flex-col gap-3 sm:gap-4 min-w-0 overflow-x-hidden overflow-x-clip">
         {/* Question Stepper Navigation Ribbon */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 w-full max-w-full min-w-0">
           <div className="flex items-center justify-between text-xs font-mono">
             <span className="text-on-surface-variant uppercase tracking-wider font-semibold">Problem Navigator</span>
             <span className="text-secondary font-medium">Question {activeQuestionIdx + 1} of {questions.length}</span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1.5">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 w-full max-w-full min-w-0">
             {questions.map((q, idx) => {
               const isAnswered = !!codeAnswers[q.id]?.trim() && codeAnswers[q.id] !== getDefaultStarterCode(q.title);
               const isActive = idx === activeQuestionIdx;
@@ -332,10 +333,52 @@ function ActiveExamWorkspaceContent() {
           </div>
         </div>
 
+        {/* Mobile / Tablet Segmented View Switcher */}
+        <div className="flex lg:hidden items-center p-1 rounded-xl bg-surface-container border border-surface-container-high w-full">
+          <button
+            type="button"
+            onClick={() => setActiveTab('statement')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === 'statement'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">description</span>
+            <span>Problem</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('editor')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === 'editor'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">code</span>
+            <span>Code Editor</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('both')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === 'both'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[16px]">splitscreen</span>
+            <span>Stacked</span>
+          </button>
+        </div>
+
         {/* 2-Column Split: Problem Statement (Left) + Monaco Python Editor (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 w-full max-w-full min-w-0">
           {/* Left Column: Problem Statement & Bento Specs (5 cols) */}
-          <div className="lg:col-span-5 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/80 shadow-sm flex flex-col space-y-4 overflow-y-auto max-h-[500px] lg:max-h-[750px]">
+          <div className={`lg:col-span-5 w-full max-w-full min-w-0 bg-surface-container-lowest p-3 sm:p-5 rounded-2xl border border-surface-container-high/80 shadow-sm flex-col space-y-4 overflow-y-auto max-h-[550px] lg:max-h-[750px] ${
+            activeTab === 'editor' ? 'hidden lg:flex' : 'flex'
+          }`}>
             <div className="flex items-start justify-between gap-2 border-b border-surface-container-high pb-3">
               <div>
                 <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-surface-container text-secondary">
@@ -354,7 +397,7 @@ function ActiveExamWorkspaceContent() {
                 <img
                   src={activeQuestion.imageUrl}
                   alt={activeQuestion.title ? `${activeQuestion.title} diagram` : 'Question diagram'}
-                  className="max-h-80 w-auto object-contain rounded-lg"
+                  className="max-h-64 sm:max-h-80 w-auto max-w-full object-contain rounded-lg"
                 />
               </div>
             )}
@@ -392,11 +435,11 @@ function ActiveExamWorkspaceContent() {
             {activeQuestion.publicExamples && activeQuestion.publicExamples.length > 0 && (
               <div className="space-y-2 pt-1">
                 <span className="text-xs font-bold text-on-surface">Public Example 1</span>
-                <div className="p-3 rounded-xl bg-surface-container-low font-mono text-xs space-y-1.5 border border-surface-container-high/60">
+                <div className="p-3 rounded-xl bg-surface-container-low font-mono text-xs space-y-1.5 border border-surface-container-high/60 min-w-0 max-w-full">
                   <div className="text-on-surface-variant text-[11px]"># Input Data:</div>
-                  <div className="text-on-surface font-semibold overflow-x-auto">{activeQuestion.publicExamples[0].stdin}</div>
+                  <div className="text-on-surface font-semibold overflow-x-auto break-all max-w-full">{activeQuestion.publicExamples[0].stdin}</div>
                   <div className="text-on-surface-variant text-[11px] pt-1"># Expected Output:</div>
-                  <div className="text-on-tertiary-container font-bold overflow-x-auto">{activeQuestion.publicExamples[0].expectedOutput}</div>
+                  <div className="text-on-tertiary-container font-bold overflow-x-auto break-all max-w-full">{activeQuestion.publicExamples[0].expectedOutput}</div>
                 </div>
               </div>
             )}
@@ -411,7 +454,9 @@ function ActiveExamWorkspaceContent() {
           </div>
 
           {/* Right Column: Monaco Python Editor (7 cols) */}
-          <div className="lg:col-span-7 bg-dark-ide rounded-2xl border border-slate-800 shadow-md flex flex-col overflow-hidden">
+          <div className={`lg:col-span-7 w-full max-w-full min-w-0 bg-dark-ide rounded-2xl border border-slate-800 shadow-md flex-col overflow-hidden ${
+            activeTab === 'statement' ? 'hidden lg:flex' : 'flex'
+          }`}>
             {/* Editor Chrome Top Bar */}
             <div className="h-10 px-3 sm:px-4 bg-dark-ide-header flex items-center justify-between select-none border-b border-slate-800 text-slate-300">
               <div className="flex items-center gap-2 font-mono text-xs">
@@ -431,12 +476,12 @@ function ActiveExamWorkspaceContent() {
             {(activeQuestion?.constraints?.toLowerCase().includes('true / false') ||
               activeQuestion?.outputDescription?.includes('True') ||
               activeQuestion?.outputDescription?.includes('False')) && (
-              <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3">
+              <div className="p-2.5 sm:p-3 bg-slate-900 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
                 <span className="text-xs font-mono text-slate-300 font-bold flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px] text-purple-400">check_circle</span>
                   <span>Select Answer:</span>
                 </span>
-                <div className="flex items-center gap-2 flex-1 max-w-xs">
+                <div className="flex items-center gap-2 w-full sm:max-w-xs">
                   <button
                     type="button"
                     onClick={() => handleCodeChange('print(True)')}
@@ -464,9 +509,9 @@ function ActiveExamWorkspaceContent() {
             )}
 
             {/* Monaco Python Editor Container */}
-            <div className="flex-1 w-full min-h-[360px] sm:min-h-[460px] relative bg-dark-ide">
+            <div className="flex-1 w-full max-w-full min-w-0 min-h-[300px] sm:min-h-[460px] h-[350px] sm:h-[460px] relative bg-dark-ide overflow-hidden">
               <Editor
-                height="460px"
+                height="100%"
                 language="python"
                 theme="vs-dark"
                 value={currentCode}
@@ -500,7 +545,7 @@ function ActiveExamWorkspaceContent() {
         </div>
 
         {/* Bottom Interactive Action Dock */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 border-t border-surface-container-high">
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 border-t border-surface-container-high w-full max-w-full min-w-0">
           <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
             <button
               onClick={() => {
@@ -519,11 +564,11 @@ function ActiveExamWorkspaceContent() {
               <span>{flaggedQuestions[activeQuestion.id] ? 'Flagged' : 'Review Later'}</span>
             </button>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-initial justify-end">
               <button
                 onClick={() => setActiveQuestionIdx((prev) => Math.max(0, prev - 1))}
                 disabled={activeQuestionIdx === 0}
-                className="h-11 px-3 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center gap-1 disabled:opacity-40"
+                className="flex-1 sm:flex-initial h-11 px-3.5 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center justify-center gap-1 disabled:opacity-40"
               >
                 <span className="material-symbols-outlined text-[18px]">chevron_left</span>
                 <span>Prev</span>
@@ -532,7 +577,7 @@ function ActiveExamWorkspaceContent() {
               <button
                 onClick={() => setActiveQuestionIdx((prev) => Math.min(questions.length - 1, prev + 1))}
                 disabled={activeQuestionIdx === questions.length - 1}
-                className="h-11 px-3 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center gap-1 disabled:opacity-40"
+                className="flex-1 sm:flex-initial h-11 px-3.5 rounded-xl bg-surface-container-high text-on-surface text-xs font-medium flex items-center justify-center gap-1 disabled:opacity-40"
               >
                 <span>Next</span>
                 <span className="material-symbols-outlined text-[18px]">chevron_right</span>
@@ -543,7 +588,7 @@ function ActiveExamWorkspaceContent() {
           <button
             onClick={() => setShowSubmitConfirm(true)}
             disabled={isSubmitting}
-            className="w-full sm:w-auto h-11 px-6 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.99] transition-all shadow-md ml-auto"
+            className="w-full sm:w-auto h-11 px-6 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.99] transition-all shadow-md sm:ml-auto"
           >
             <span className="material-symbols-outlined text-[18px]">send</span>
             <span>Submit &amp; Grade Examination</span>
