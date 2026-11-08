@@ -64,8 +64,8 @@ function PreExamInstructionsContent() {
     <>
       <Navbar />
 
-      <main className="flex-1 flex flex-col relative w-full pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-3xl mx-auto">
-        <div className="flex flex-col w-full pb-8">
+      <main className="flex-1 flex flex-col relative w-full max-w-full min-w-0 overflow-x-hidden overflow-x-clip pt-16 sm:pt-20 pb-12 sm:pb-16 bg-surface px-3 sm:px-4 md:px-8 max-w-3xl mx-auto">
+        <div className="flex flex-col w-full max-w-full min-w-0 pb-8">
           {/* Context Header Banner */}
           <section className="bg-surface-container-low rounded-2xl p-4 sm:p-5 shadow-sm mb-4 border border-surface-container-high/60">
             <div className="flex items-center gap-2 mb-1.5">
@@ -143,7 +143,7 @@ function PreExamInstructionsContent() {
               </span>
             </div>
 
-            <div className="bg-surface-container-high/40 rounded-xl p-3 flex items-center justify-between">
+            <div className="bg-surface-container-high/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-primary-container text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
                   AR
