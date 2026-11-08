@@ -9,13 +9,13 @@ export default function RulesPage() {
     <>
       <Navbar />
 
-      <main className="flex-1 pt-16 sm:pt-20 pb-12 sm:pb-16 px-3 sm:px-4 md:px-8 max-w-4xl mx-auto w-full">
-        <div className="flex flex-col gap-5 sm:gap-6">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="text-on-surface-variant hover:text-on-surface">
+      <main className="flex-1 pt-16 sm:pt-20 pb-12 sm:pb-16 px-3 sm:px-4 md:px-8 max-w-4xl mx-auto w-full max-w-full min-w-0 overflow-x-hidden overflow-x-clip">
+        <div className="flex flex-col gap-5 sm:gap-6 w-full max-w-full min-w-0">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <Link href="/" className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container mt-0.5 sm:mt-0 transition-colors">
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-bold text-on-surface">FocusAssess Examination Protocols &amp; Integrity Guidelines</h1>
+            <h1 className="text-lg sm:text-2xl font-bold text-on-surface break-words leading-snug">FocusAssess Examination Protocols &amp; Integrity Guidelines</h1>
           </div>
 
           <div className="bg-surface-container-lowest p-4 sm:p-6 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-5 sm:space-y-6 text-sm text-on-surface">
