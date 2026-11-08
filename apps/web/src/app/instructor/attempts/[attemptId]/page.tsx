@@ -68,7 +68,7 @@ function InstructorAttemptReviewContent() {
 
   return (
     <DashboardLayout portalRole="instructor" title="Submission & Telemetry Adjudication" subtitle={`Attempt #${attemptId.slice(0, 8).toUpperCase()} • Comprehensive Proctoring Audit`}>
-      <div className="flex flex-col gap-5 sm:gap-6">
+      <div className="flex flex-col gap-5 sm:gap-6 w-full max-w-full min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Link href="/instructor/dashboard" className="text-on-surface-variant hover:text-on-surface">
@@ -128,24 +128,24 @@ function InstructorAttemptReviewContent() {
           </div>
 
           {/* Submitted Code Solution Viewer */}
-          <section className="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-3">
+          <section className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-3 w-full max-w-full min-w-0">
             <h2 className="text-sm font-bold text-on-surface uppercase font-mono tracking-wider">Candidate Source Code Snapshot</h2>
-            <div className="bg-dark-ide rounded-xl p-4 font-mono text-xs text-slate-200 overflow-x-auto max-h-[350px]">
-              <pre>{attempt?.answers?.[0]?.sourceCode || '# No code recorded'}</pre>
+            <div className="bg-dark-ide rounded-xl p-3 sm:p-4 font-mono text-xs text-slate-200 overflow-x-auto max-h-[350px] w-full max-w-full min-w-0">
+              <pre className="whitespace-pre-wrap break-all">{attempt?.answers?.[0]?.sourceCode || '# No code recorded'}</pre>
             </div>
           </section>
 
           {/* Proctor Telemetry Audit Timeline */}
-          <section className="bg-surface-container-lowest p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-3">
+          <section className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-3 w-full max-w-full min-w-0">
             <h2 className="text-sm font-bold text-on-surface uppercase font-mono tracking-wider">Recorded Telemetry Incidents</h2>
             <div className="space-y-2">
               {attempt?.events?.map((ev: any, idx: number) => (
-                <div key={idx} className="p-3 bg-surface-container-low rounded-xl flex items-center justify-between text-xs">
+                <div key={idx} className="p-3 bg-surface-container-low rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-error text-[18px]">warning</span>
                     <span className="font-mono font-semibold">{ev.eventType}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-on-surface-variant font-mono">
+                  <div className="flex items-center gap-3 sm:gap-4 text-on-surface-variant font-mono pl-6 sm:pl-0">
                     <span className="text-error font-bold">-{ev.penalty}% Penalty</span>
                     <span>{new Date(ev.occurredAt).toLocaleTimeString()}</span>
                   </div>
@@ -176,17 +176,17 @@ function InstructorAttemptReviewContent() {
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowReopenModal(false)}
-                className="px-4 h-9 rounded-xl bg-surface-container text-xs font-medium"
+                className="w-full sm:w-auto px-4 h-10 sm:h-9 rounded-xl bg-surface-container text-xs font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 h-9 rounded-xl bg-primary text-white text-xs font-semibold"
+                className="w-full sm:w-auto px-4 h-10 sm:h-9 rounded-xl bg-primary text-white text-xs font-semibold"
               >
                 Confirm Reopen
               </button>
@@ -224,17 +224,17 @@ function InstructorAttemptReviewContent() {
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowOverrideModal(false)}
-                className="px-4 h-9 rounded-xl bg-surface-container text-xs font-medium"
+                className="w-full sm:w-auto px-4 h-10 sm:h-9 rounded-xl bg-surface-container text-xs font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 h-9 rounded-xl bg-primary text-white text-xs font-semibold"
+                className="w-full sm:w-auto px-4 h-10 sm:h-9 rounded-xl bg-primary text-white text-xs font-semibold"
               >
                 Apply Override
               </button>
