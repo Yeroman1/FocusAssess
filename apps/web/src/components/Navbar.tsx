@@ -42,20 +42,20 @@ export function Navbar({ userRole, userName, userEmail }: NavbarProps) {
       : '/student/dashboard';
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high/60">
-      <div className="h-16 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+    <header className="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high/60 w-full max-w-full overflow-x-hidden overflow-x-clip">
+      <div className="h-16 px-3 sm:px-4 md:px-8 max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0 max-w-full">
         {/* Brand & Identity */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
             <div className="w-8 h-8 rounded-lg bg-primary-container text-white flex items-center justify-center font-mono font-bold text-xs sm:text-sm shadow-sm flex-shrink-0">
               FA
             </div>
-            <span className="font-semibold text-base sm:text-lg text-on-surface tracking-tight">FocusAssess</span>
+            <span className="font-semibold text-base sm:text-lg text-on-surface tracking-tight truncate">FocusAssess</span>
           </Link>
 
           {/* Role badge ONLY inside authenticated dashboard pages, NEVER on home page */}
           {!isHomePage && user && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-secondary text-[10px] sm:text-xs uppercase font-mono font-semibold tracking-wide flex-shrink-0">
+            <span className="hidden xs:inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-high text-secondary text-[10px] sm:text-xs uppercase font-mono font-semibold tracking-wide flex-shrink-0">
               {effectiveRole}
             </span>
           )}
