@@ -83,7 +83,7 @@ function CreateExamContent() {
       title="Create New Examination"
       subtitle="Step 1: Basic Specifications, Scheduling & Student Message"
     >
-      <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full pb-16">
+      <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full max-w-full min-w-0 pb-16">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center gap-2">
           <Link
