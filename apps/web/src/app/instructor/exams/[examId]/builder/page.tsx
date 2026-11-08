@@ -619,7 +619,7 @@ function ExamBuilderContent() {
       title={exam?.title || 'Dynamic Question Builder'}
       subtitle="Step 2: Add Python Coding Questions, Test Cases & Expected Outputs"
     >
-      <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full pb-20">
+      <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full max-w-full min-w-0 pb-20">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -811,7 +811,7 @@ function ExamBuilderContent() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold block mb-1">Duration (Minutes) *</label>
                     <input
@@ -888,7 +888,7 @@ function ExamBuilderContent() {
               <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-on-surface-variant">
                 Candidate Access Token
               </span>
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
                 <span className="text-2xl sm:text-3xl font-mono font-bold text-secondary tracking-widest select-all">
                   {publishedToken}
                 </span>
@@ -964,11 +964,11 @@ function ExamBuilderContent() {
               <label className="text-xs font-bold text-on-surface block">
                 Select Item Format <span className="text-error">*</span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
                 <button
                   type="button"
                   onClick={() => setSelectedType('CODE')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-xl border text-left flex flex-col gap-1 transition-all active:scale-[0.98] ${
                     selectedType === 'CODE'
                       ? 'bg-primary/10 border-primary text-primary font-bold shadow-sm ring-1 ring-primary'
                       : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:bg-surface-container'
@@ -988,7 +988,7 @@ function ExamBuilderContent() {
                     setSelectedType('TRUE_FALSE');
                     setQMarks(5);
                   }}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-xl border text-left flex flex-col gap-1 transition-all active:scale-[0.98] ${
                     selectedType === 'TRUE_FALSE'
                       ? 'bg-primary/10 border-primary text-primary font-bold shadow-sm ring-1 ring-primary'
                       : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:bg-surface-container'
@@ -1004,7 +1004,7 @@ function ExamBuilderContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedType('MCQ_SINGLE')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-xl border text-left flex flex-col gap-1 transition-all active:scale-[0.98] ${
                     selectedType === 'MCQ_SINGLE'
                       ? 'bg-primary/10 border-primary text-primary font-bold shadow-sm ring-1 ring-primary'
                       : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:bg-surface-container'
@@ -1020,7 +1020,7 @@ function ExamBuilderContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedType('MCQ_MULTI')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-xl border text-left flex flex-col gap-1 transition-all active:scale-[0.98] ${
                     selectedType === 'MCQ_MULTI'
                       ? 'bg-primary/10 border-primary text-primary font-bold shadow-sm ring-1 ring-primary'
                       : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:bg-surface-container'
@@ -1036,7 +1036,7 @@ function ExamBuilderContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedType('SHORT_ANSWER')}
-                  className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                  className={`col-span-2 sm:col-span-1 p-2.5 sm:p-3 rounded-xl border text-left flex flex-col gap-1 transition-all active:scale-[0.98] ${
                     selectedType === 'SHORT_ANSWER'
                       ? 'bg-primary/10 border-primary text-primary font-bold shadow-sm ring-1 ring-primary'
                       : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:bg-surface-container'
@@ -1063,7 +1063,7 @@ function ExamBuilderContent() {
                       </span>
                       <span className="text-error">*</span>
                     </label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {!qImage && (
                         <div>
                           <input
@@ -1356,7 +1356,7 @@ function ExamBuilderContent() {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={handleDistributeMarks}
@@ -1388,9 +1388,9 @@ function ExamBuilderContent() {
                             : 'bg-emerald-500/5 border-emerald-500/30'
                         }`}
                       >
-                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-surface-container-high/60">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-primary text-white font-mono text-[10px] font-bold flex items-center justify-center">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-2 border-b border-surface-container-high/60">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="w-5 h-5 rounded-full bg-primary text-white font-mono text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                               {idx + 1}
                             </span>
                             <span className="text-xs font-bold font-mono text-on-surface">
@@ -1405,7 +1405,7 @@ function ExamBuilderContent() {
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
                             {/* Visibility toggle button */}
                             <button
                               type="button"
@@ -1799,10 +1799,10 @@ function ExamBuilderContent() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
             <Link
               href="/instructor/dashboard"
-              className="flex-1 sm:flex-none px-4 h-11 rounded-xl bg-surface-container text-xs font-semibold text-on-surface flex items-center justify-center hover:bg-surface-container-high transition-colors"
+              className="w-full sm:w-auto px-4 h-11 rounded-xl bg-surface-container text-xs font-semibold text-on-surface flex items-center justify-center hover:bg-surface-container-high transition-colors"
             >
               Dashboard
             </Link>
@@ -1811,21 +1811,21 @@ function ExamBuilderContent() {
               <button
                 onClick={handlePublishExam}
                 disabled={isPublishing || questions.length === 0}
-                className="flex-1 sm:flex-none px-6 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 active:scale-95"
+                className="w-full sm:w-auto px-6 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[18px]">lock</span>
                 <span>{isPublishing ? 'Publishing...' : 'Publish & Generate Token'}</span>
               </button>
             ) : exam?.status === 'published' ? (
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-600 font-bold px-3 py-2 rounded-xl bg-emerald-500/10">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-mono text-emerald-600 font-bold px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                   <span className="material-symbols-outlined text-[18px]">verified</span>
                   <span>Exam Published</span>
                 </div>
                 <button
                   onClick={handleCloseEntry}
                   disabled={isTogglingEntry}
-                  className="px-4 h-11 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/20 transition-all disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 h-11 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-500/20 transition-all disabled:opacity-50"
                   title="Stop new candidate entries while allowing active attempts to finish"
                 >
                   <span className="material-symbols-outlined text-[18px]">lock</span>
@@ -1833,15 +1833,15 @@ function ExamBuilderContent() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs font-mono text-rose-600 font-bold px-3 py-2 rounded-xl bg-rose-500/10">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-mono text-rose-600 font-bold px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
                   <span className="material-symbols-outlined text-[18px]">block</span>
                   <span>Entry Closed</span>
                 </div>
                 <button
                   onClick={handleReopenEntry}
                   disabled={isTogglingEntry}
-                  className="px-4 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+                  className="w-full sm:w-auto px-4 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
                   title="Allow new candidate entries again using the examination key"
                 >
                   <span className="material-symbols-outlined text-[18px]">lock_open</span>
