@@ -74,9 +74,9 @@ function StudentDashboardContent() {
 
   return (
     <DashboardLayout portalRole="student" title="Student Assessment Hub" subtitle="Supervised Python runtime & active examinations">
-      <div className="flex flex-col w-full pb-8 space-y-6">
+      <div className="flex flex-col w-full max-w-full min-w-0 pb-8 space-y-6">
         {/* Welcome Banner */}
-        <section className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col gap-3 relative overflow-hidden border border-surface-container-high/60">
+        <section className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col gap-3 relative overflow-hidden border border-surface-container-high/60 w-full max-w-full min-w-0">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-secondary text-xs uppercase font-mono font-semibold">
                 <span className="material-symbols-outlined text-[14px]">school</span>
@@ -108,14 +108,14 @@ function StudentDashboardContent() {
 
           {/* Instructor Quick Access (if user has instructor privileges) */}
           {profile?.role === 'instructor' && (
-            <section className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-3">
+            <section className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm w-full max-w-full min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
                   <span className="material-symbols-outlined text-[22px]">workspace_premium</span>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h4 className="text-sm font-bold text-on-surface">Instructor Account Active</h4>
-                  <p className="text-xs text-on-surface-variant">
+                  <p className="text-xs text-on-surface-variant truncate">
                     You have verified instructor privileges to author programming assessments and evaluate submissions.
                   </p>
                 </div>
@@ -131,12 +131,12 @@ function StudentDashboardContent() {
           )}
 
           {/* Real Metrics 4-Up Grid (Student's Personal Examination History) */}
-          <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between relative overflow-hidden">
+          <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 w-full max-w-full min-w-0">
+            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between relative overflow-hidden min-w-0">
               <div className="w-1.5 h-full bg-primary absolute left-0 top-0 rounded-l" />
-              <div className="flex items-center justify-between pl-1">
-                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Exams Taken</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+              <div className="flex items-center justify-between pl-1 gap-1">
+                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold truncate">Exams Taken</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
                   <span className="material-symbols-outlined text-[16px] sm:text-[18px]">history_edu</span>
                 </div>
               </div>
@@ -146,13 +146,13 @@ function StudentDashboardContent() {
                 </span>
                 <span className="text-[11px] sm:text-xs text-primary font-medium font-mono">Attempts</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant pl-1">Total exams taken</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant pl-1 truncate">Total exams taken</span>
             </div>
 
-            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Completed</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-emerald-600">
+            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold truncate">Completed</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-emerald-600 flex-shrink-0">
                   <span className="material-symbols-outlined text-[16px] sm:text-[18px]">task_alt</span>
                 </div>
               </div>
@@ -162,13 +162,13 @@ function StudentDashboardContent() {
                 </span>
                 <span className="text-[11px] sm:text-xs text-emerald-600 font-medium font-mono">Graded</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant">Finalized results</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant truncate">Finalized results</span>
             </div>
 
-            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Evaluating</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-amber-600">
+            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold truncate">Evaluating</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-amber-600 flex-shrink-0">
                   <span className="material-symbols-outlined text-[16px] sm:text-[18px]">hourglass_top</span>
                 </div>
               </div>
@@ -178,13 +178,13 @@ function StudentDashboardContent() {
                 </span>
                 <span className="text-[11px] sm:text-xs text-amber-600 font-medium font-mono">Pending</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant">Review in progress</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant truncate">Review in progress</span>
             </div>
 
-            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold">Avg Trust Score</span>
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-blue-600">
+            <div className="bg-surface-container-lowest p-3 sm:p-3.5 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col justify-between min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[10px] sm:text-xs text-on-surface-variant uppercase font-mono font-semibold truncate">Avg Trust</span>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-surface-container flex items-center justify-center text-blue-600 flex-shrink-0">
                   <span className="material-symbols-outlined text-[16px] sm:text-[18px]">verified_user</span>
                 </div>
               </div>
@@ -194,23 +194,23 @@ function StudentDashboardContent() {
                 </span>
                 <span className="text-[11px] sm:text-xs text-blue-600 font-medium font-mono">Integrity</span>
               </div>
-              <span className="text-[10px] sm:text-xs text-on-surface-variant">Proctoring index</span>
+              <span className="text-[10px] sm:text-xs text-on-surface-variant truncate">Proctoring index</span>
             </div>
           </section>
 
           {/* Section 1: Available Exams & Access Dispatch */}
-          <section id="available-exams" className="space-y-4 scroll-mt-20">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+          <section id="available-exams" className="space-y-4 scroll-mt-20 w-full max-w-full min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center text-primary flex-shrink-0">
                   <span className="material-symbols-outlined text-[18px]">key</span>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-on-surface">Available Examinations &amp; Key Access</h3>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-on-surface truncate">Available Examinations &amp; Key Access</h3>
                   <p className="text-xs text-on-surface-variant">Enter your exam access key to start or resume an examination.</p>
                 </div>
               </div>
-              <span className="text-[10px] sm:text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">
+              <span className="text-[10px] sm:text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant self-start sm:self-auto flex-shrink-0">
                 ACCESS DISPATCH
               </span>
             </div>
@@ -303,22 +303,22 @@ function StudentDashboardContent() {
           </section>
 
           {/* Section 2: My Taken Examinations & Submissions */}
-          <section id="recent-submissions" className="space-y-3 scroll-mt-20">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[20px]">history_edu</span>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-on-surface">My Taken Examinations</h3>
+          <section id="recent-submissions" className="space-y-3 scroll-mt-20 w-full max-w-full min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-outlined text-primary text-[20px] flex-shrink-0">history_edu</span>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-bold text-on-surface truncate">My Taken Examinations</h3>
                   <p className="text-xs text-on-surface-variant">Your historical test attempts, evaluation outcomes, and integrity scores.</p>
                 </div>
               </div>
-              <span className="text-xs text-primary font-semibold font-mono px-2.5 py-1 rounded-full bg-surface-container">
+              <span className="text-xs text-primary font-semibold font-mono px-2.5 py-1 rounded-full bg-surface-container self-start sm:self-auto flex-shrink-0">
                 {(dashboardData?.myExams?.length ?? dashboardData?.recentSubmissions?.length ?? 0)} Recorded
               </span>
             </div>
 
             {(dashboardData?.myExams?.length || dashboardData?.recentSubmissions?.length) ? (
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 w-full max-w-full min-w-0">
                 {(dashboardData?.myExams || dashboardData?.recentSubmissions).map((sub: any) => {
                   const isTerminated = sub.status === 'terminated_suspicious' || sub.status === 'terminated';
                   const isGraded = sub.gradingStatus === 'graded' && sub.resultsReleased;
@@ -327,9 +327,9 @@ function StudentDashboardContent() {
                   return (
                     <div
                       key={sub.id}
-                      className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-surface-container-highest transition-colors"
+                      className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-surface-container-high/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-surface-container-highest transition-colors w-full max-w-full min-w-0"
                     >
-                      <div className="flex items-start sm:items-center gap-3 min-w-0">
+                      <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                         <div
                           className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                             isTerminated
@@ -343,7 +343,7 @@ function StudentDashboardContent() {
                             {isTerminated ? 'gavel' : isGraded ? 'task_alt' : 'hourglass_top'}
                           </span>
                         </div>
-                        <div className="min-w-0 space-y-1">
+                        <div className="min-w-0 space-y-1 flex-1">
                           <h5 className="text-sm font-bold text-on-surface truncate">{sub.examTitle}</h5>
                           <div className="flex items-center gap-2 text-xs text-on-surface-variant font-mono flex-wrap">
                             <span className="capitalize">{sub.status?.replace('_', ' ')}</span>
