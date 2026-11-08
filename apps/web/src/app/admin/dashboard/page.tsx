@@ -168,9 +168,9 @@ function AdminDashboardContent() {
 
   return (
     <DashboardLayout portalRole="admin" title="Platform Administration" subtitle="User directory, teacher authorization & security audits">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 w-full max-w-full min-w-0">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">Platform Administration</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-on-surface">Platform Administration</h1>
           <p className="text-xs text-on-surface-variant mt-0.5">
             Authorize teachers, manage user access, inspect security policies, and monitor immutable audit trails.
           </p>
@@ -184,7 +184,7 @@ function AdminDashboardContent() {
         )}
 
         {/* Aggregate Live Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 w-full max-w-full min-w-0">
           <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
             <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Total Accounts</span>
             <span className="text-xl sm:text-2xl font-bold text-on-surface mt-1 block">
@@ -222,7 +222,7 @@ function AdminDashboardContent() {
         </div>
 
         {/* Teacher Portal & Authorized Teachers Section */}
-        <section id="teachers" className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-5 scroll-mt-20">
+        <section id="teachers" className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-5 scroll-mt-20 w-full max-w-full min-w-0">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -317,16 +317,16 @@ function AdminDashboardContent() {
                     key={teach.id || teach.email}
                     className="p-3.5 sm:p-4 rounded-xl border border-surface-container-high bg-white flex flex-col md:flex-row md:items-center justify-between gap-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0">
                         {teach.fullName ? teach.fullName.slice(0, 2).toUpperCase() : teach.email.slice(0, 2).toUpperCase()}
                       </div>
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-xs sm:text-sm text-on-surface">
+                          <span className="font-semibold text-xs sm:text-sm text-on-surface truncate">
                             {teach.fullName || 'Authorized Google Account'}
                           </span>
-                          <span className="font-mono text-xs text-on-surface-variant font-medium">
+                          <span className="font-mono text-xs text-on-surface-variant font-medium break-all">
                             {teach.email}
                           </span>
                           <span
@@ -385,7 +385,7 @@ function AdminDashboardContent() {
         </section>
 
         {/* User Management Table */}
-        <section id="users" className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20">
+        <section id="users" className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20 w-full max-w-full min-w-0">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-xs sm:text-sm font-bold text-on-surface uppercase font-mono tracking-wider">
               User Directory &amp; RBAC Authorization
@@ -394,25 +394,35 @@ function AdminDashboardContent() {
           </div>
 
           {users.length > 0 ? (
-            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-              <table className="w-full text-left text-xs min-w-[540px]">
-                <thead>
-                  <tr className="border-b border-surface-container-high text-on-surface-variant font-mono uppercase text-[10px]">
-                    <th className="pb-2">Name &amp; Email</th>
-                    <th className="pb-2">Role</th>
-                    <th className="pb-2">Status</th>
-                    <th className="pb-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-container-high">
-                  {users.map((u) => (
-                    <tr key={u.id} className="py-2.5">
-                      <td className="py-3 pr-2">
-                        <span className="font-semibold text-on-surface block">{u.fullName}</span>
-                        <span className="font-mono text-on-surface-variant text-[11px]">{u.email}</span>
-                      </td>
+            <>
+              {/* Mobile Card Feed View (< sm) */}
+              <div className="grid grid-cols-1 gap-3 sm:hidden">
+                {users.map((u) => (
+                  <div key={u.id} className="p-3.5 rounded-xl border border-surface-container-high bg-white flex flex-col gap-3 shadow-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0">
+                          {u.fullName ? u.fullName.slice(0, 2).toUpperCase() : u.email.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-semibold text-xs text-on-surface block truncate">{u.fullName}</span>
+                          <span className="font-mono text-on-surface-variant text-[11px] break-all block">{u.email}</span>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase flex-shrink-0 ${
+                          u.status === 'active'
+                            ? 'bg-tertiary-fixed text-on-tertiary-fixed'
+                            : 'bg-error-container text-error'
+                        }`}
+                      >
+                        {u.status}
+                      </span>
+                    </div>
 
-                      <td className="py-3 px-2">
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-surface-container-high/60">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-mono text-on-surface-variant font-medium">Role:</span>
                         <select
                           value={u.role}
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
@@ -422,37 +432,84 @@ function AdminDashboardContent() {
                           <option value="instructor">instructor</option>
                           <option value="admin">admin</option>
                         </select>
-                      </td>
+                      </div>
 
-                      <td className="py-3 px-2">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                            u.status === 'active'
-                              ? 'bg-tertiary-fixed text-on-tertiary-fixed'
-                              : 'bg-error-container text-error'
-                          }`}
-                        >
-                          {u.status}
-                        </span>
-                      </td>
+                      <button
+                        onClick={() => handleToggleSuspend(u.id, u.status)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                          u.status === 'active'
+                            ? 'bg-error-container text-error hover:bg-error/20'
+                            : 'bg-surface-container text-secondary'
+                        }`}
+                      >
+                        {u.status === 'active' ? 'Suspend' : 'Activate'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                      <td className="py-3 pl-2 text-right">
-                        <button
-                          onClick={() => handleToggleSuspend(u.id, u.status)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                            u.status === 'active'
-                              ? 'bg-error-container text-error hover:bg-error/20'
-                              : 'bg-surface-container text-secondary'
-                          }`}
-                        >
-                          {u.status === 'active' ? 'Suspend' : 'Activate'}
-                        </button>
-                      </td>
+              {/* Desktop Table View (>= sm) */}
+              <div className="hidden sm:block overflow-x-auto w-full max-w-full">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-surface-container-high text-on-surface-variant font-mono uppercase text-[10px]">
+                      <th className="pb-2">Name &amp; Email</th>
+                      <th className="pb-2">Role</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container-high">
+                    {users.map((u) => (
+                      <tr key={u.id} className="py-2.5">
+                        <td className="py-3 pr-2">
+                          <span className="font-semibold text-on-surface block">{u.fullName}</span>
+                          <span className="font-mono text-on-surface-variant text-[11px] break-all">{u.email}</span>
+                        </td>
+
+                        <td className="py-3 px-2">
+                          <select
+                            value={u.role}
+                            onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                            className="px-2 py-1 bg-surface-container rounded-lg font-mono text-xs border border-surface-container-high focus:outline-none"
+                          >
+                            <option value="student">student</option>
+                            <option value="instructor">instructor</option>
+                            <option value="admin">admin</option>
+                          </select>
+                        </td>
+
+                        <td className="py-3 px-2">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                              u.status === 'active'
+                                ? 'bg-tertiary-fixed text-on-tertiary-fixed'
+                                : 'bg-error-container text-error'
+                            }`}
+                          >
+                            {u.status}
+                          </span>
+                        </td>
+
+                        <td className="py-3 pl-2 text-right">
+                          <button
+                            onClick={() => handleToggleSuspend(u.id, u.status)}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                              u.status === 'active'
+                                ? 'bg-error-container text-error hover:bg-error/20'
+                                : 'bg-surface-container text-secondary'
+                            }`}
+                          >
+                            {u.status === 'active' ? 'Suspend' : 'Activate'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="py-8 text-center text-xs text-on-surface-variant">
               No users found. Users are automatically registered upon first Google OAuth sign-in.
@@ -461,7 +518,7 @@ function AdminDashboardContent() {
         </section>
 
         {/* Immutable Security Audit Logs */}
-        <section id="audit" className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-3 scroll-mt-20">
+        <section id="audit" className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-surface-container-high/60 shadow-sm space-y-3 scroll-mt-20 w-full max-w-full min-w-0">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-xs sm:text-sm font-bold text-on-surface uppercase font-mono tracking-wider">
               Immutable Security Audit Logs
