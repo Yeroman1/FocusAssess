@@ -112,7 +112,7 @@ function InstructorDashboardContent() {
 
   return (
     <DashboardLayout portalRole="instructor" title="Instructor Exam Console" subtitle="Manage examinations, test-cases, and anti-cheating telemetry">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 w-full max-w-full min-w-0">
           {/* Header Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
             <div>
@@ -133,29 +133,29 @@ function InstructorDashboardContent() {
 
           {/* Quick Metrics 4-Up Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
-            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
-              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Total Examinations</span>
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm min-w-0">
+              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block truncate">Total Examinations</span>
               <span className="text-xl sm:text-2xl font-bold text-on-surface mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.totalExams ?? exams.length)}
               </span>
             </div>
 
-            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
-              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Published Active</span>
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm min-w-0">
+              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block truncate">Published Active</span>
               <span className="text-xl sm:text-2xl font-bold text-secondary mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.publishedExams ?? 0)}
               </span>
             </div>
 
-            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
-              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Live In-Progress</span>
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm min-w-0">
+              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block truncate">Live In-Progress</span>
               <span className="text-xl sm:text-2xl font-bold text-on-tertiary-container mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.activeAttempts ?? 0)}
               </span>
             </div>
 
-            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm">
-              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block">Flagged For Review</span>
+            <div className="p-3 sm:p-4 bg-surface-container-lowest rounded-2xl border border-surface-container-high/60 shadow-sm min-w-0">
+              <span className="text-[10px] uppercase font-mono font-bold text-on-surface-variant block truncate">Flagged For Review</span>
               <span className="text-xl sm:text-2xl font-bold text-error mt-1 block">
                 {isLoading ? '—' : (dashboardData?.stats?.flaggedAttempts ?? 0)}
               </span>
@@ -163,7 +163,7 @@ function InstructorDashboardContent() {
           </div>
 
           {/* Examination Roster */}
-          <section id="exams" className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20">
+          <section id="exams" className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20 w-full max-w-full min-w-0">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-sm sm:text-base font-bold text-on-surface">Your Examinations</h2>
               <span className="text-xs font-mono text-on-surface-variant">{exams.length} Configured</span>
@@ -177,10 +177,10 @@ function InstructorDashboardContent() {
                   const isDraft = ex.status === 'draft';
 
                   return (
-                    <div key={ex.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="space-y-1">
+                    <div key={ex.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 max-w-full">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-semibold text-on-surface">{ex.title}</h3>
+                          <h3 className="text-sm font-semibold text-on-surface truncate">{ex.title}</h3>
                           {isPublished && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -292,7 +292,7 @@ function InstructorDashboardContent() {
 
           {/* Recent Submissions & Flagged Review List */}
           {dashboardData?.recentSubmissions && dashboardData.recentSubmissions.length > 0 && (
-            <section id="submissions" className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20">
+            <section id="submissions" className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-container-high/60 shadow-sm space-y-4 scroll-mt-20 w-full max-w-full min-w-0">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-sm sm:text-base font-bold text-on-surface">Recent Student Attempts</h2>
                 <span className="text-xs font-mono text-on-surface-variant">Live Telemetry</span>
@@ -300,8 +300,8 @@ function InstructorDashboardContent() {
 
               <div className="divide-y divide-surface-container-high">
                 {dashboardData.recentSubmissions.map((att: any) => (
-                  <div key={att.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
+                  <div key={att.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0 max-w-full">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-on-surface">
                           {att.student?.fullName || att.student?.email || 'Student'}
