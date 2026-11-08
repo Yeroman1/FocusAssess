@@ -9,8 +9,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
   themeColor: '#0f172a',
 };
 
@@ -22,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" className="light overflow-x-hidden overflow-x-clip max-w-full w-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -35,7 +36,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="bg-surface font-sans text-on-surface min-h-screen w-full flex flex-col antialiased">
+      <body className="bg-surface font-sans text-on-surface min-h-screen w-full max-w-full overflow-x-hidden overflow-x-clip flex flex-col antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
