@@ -210,23 +210,25 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
         </div>
 
         {/* Mobile Portal Switcher for Admin / Instructor */}
-        {isMobile && isSoleAdmin && (
+        {isMobile && (isSoleAdmin || profile?.role === 'instructor') && (
           <div className="p-2 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col gap-1.5">
             <span className="text-[10px] font-mono uppercase text-on-surface-variant font-bold px-1">
               Switch Console View
             </span>
-            <div className="grid grid-cols-3 gap-1">
-              <Link
-                href="/admin/dashboard"
-                onClick={() => setMobileOpen(false)}
-                className={`py-1.5 rounded-lg text-center text-[11px] font-mono font-semibold transition-colors ${
-                  activePortalRole === 'admin'
-                    ? 'bg-black text-white shadow-sm'
-                    : 'text-on-surface-variant bg-surface-container hover:text-on-surface hover:bg-slate-200'
-                }`}
-              >
-                Admin
-              </Link>
+            <div className={`grid ${isSoleAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-1`}>
+              {isSoleAdmin && (
+                <Link
+                  href="/admin/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className={`py-1.5 rounded-lg text-center text-[11px] font-mono font-semibold transition-colors ${
+                    activePortalRole === 'admin'
+                      ? 'bg-black text-white shadow-sm'
+                      : 'text-on-surface-variant bg-surface-container hover:text-on-surface hover:bg-slate-200'
+                  }`}
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/instructor/dashboard"
                 onClick={() => setMobileOpen(false)}
@@ -330,16 +332,16 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
   );
 
   return (
-    <div className="min-h-screen bg-surface w-full">
+    <div className="min-h-screen bg-surface w-full max-w-full overflow-x-hidden overflow-x-clip">
       {/* ========================================================================= */}
       {/* 1. PERSISTENT FIXED TOP BAR ACROSS STUDENT, TEACHER, AND ADMIN            */}
       {/* ========================================================================= */}
-      <header className="fixed top-0 left-0 right-0 z-40 h-16 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-surface-container-high/80 px-3 sm:px-6 md:px-8 flex items-center justify-between shadow-sm">
+      <header className="fixed top-0 left-0 right-0 z-40 h-16 w-full max-w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-surface-container-high/80 px-2.5 sm:px-6 md:px-8 flex items-center justify-between shadow-sm overflow-x-hidden overflow-x-clip">
         {/* Left: Mobile Toggle + Brand + Status */}
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-xl text-on-surface-variant hover:bg-surface-container active:scale-95 transition-colors"
+            className="lg:hidden p-2 rounded-xl text-on-surface-variant hover:bg-surface-container active:scale-95 transition-colors"
             aria-label="Toggle navigation drawer"
           >
             <span className="material-symbols-outlined text-[24px]">
@@ -352,14 +354,14 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
               FA
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-base sm:text-lg text-on-surface tracking-tight leading-none">FocusAssess</span>
-              <span className="text-[9px] sm:text-[10px] font-mono text-on-surface-variant font-medium tracking-wide mt-0.5 sm:mt-1 hidden xs:inline">
+              <span className="font-bold text-sm sm:text-base md:text-lg text-on-surface tracking-tight leading-none">FocusAssess</span>
+              <span className="text-[9px] sm:text-[10px] font-mono text-on-surface-variant font-medium tracking-wide mt-0.5 sm:mt-1 hidden sm:inline">
                 EXAM PLATFORM
               </span>
             </div>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-1.5 pl-3 border-l border-surface-container-high">
+          <div className="hidden xl:flex items-center gap-1.5 pl-3 border-l border-surface-container-high">
             <span className="w-2 h-2 rounded-full bg-on-tertiary-container animate-pulse" />
             <span className="font-mono text-xs text-on-surface-variant flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px] text-on-tertiary-container">verified_user</span>
@@ -370,7 +372,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
 
         {/* Center: Admin & Multi-Role Portal Switcher Tabs */}
         {isSoleAdmin ? (
-          <div className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-surface-container-low border border-surface-container-high shadow-inner">
+          <div className="hidden xl:flex items-center gap-1 p-1 rounded-xl bg-surface-container-low border border-surface-container-high shadow-inner">
             <Link
               href="/admin/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
@@ -403,7 +405,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
             </Link>
           </div>
         ) : profile?.role === 'instructor' ? (
-          <div className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-surface-container-low border border-surface-container-high shadow-inner">
+          <div className="hidden xl:flex items-center gap-1 p-1 rounded-xl bg-surface-container-low border border-surface-container-high shadow-inner">
             <Link
               href="/instructor/dashboard"
               className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono transition-all ${
@@ -428,52 +430,53 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
         ) : null}
 
         {/* Right: Integrity Rules + Role Badge + User Profile & Sign Out */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
           <Link
             href="/rules"
-            className="h-8 px-2.5 sm:px-3 rounded-lg border border-surface-container-high hover:bg-surface-container text-xs font-medium text-on-surface-variant hidden sm:flex items-center gap-1.5 transition-colors"
+            className="h-8 px-2.5 rounded-lg border border-surface-container-high hover:bg-surface-container text-xs font-medium text-on-surface-variant hidden md:flex items-center gap-1.5 transition-colors"
             title="View examination integrity guidelines"
           >
             <span className="material-symbols-outlined text-[15px]">gavel</span>
-            <span className="hidden md:inline">Integrity Rules</span>
+            <span>Rules</span>
           </Link>
 
           {/* Role Badge in Top Bar */}
           <div
-            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full border text-[10px] sm:text-xs font-mono font-bold tracking-wide ${roleMeta.badgeClass}`}
+            className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full border text-[10px] sm:text-xs font-mono font-bold tracking-wide ${roleMeta.badgeClass}`}
+            title={`Active role: ${roleMeta.label}`}
           >
             <span className="material-symbols-outlined text-[13px] sm:text-[14px]">{roleMeta.icon}</span>
-            <span className="hidden xs:inline">{roleMeta.label}</span>
-            <span className="xs:hidden">{roleMeta.shortLabel}</span>
+            <span className="hidden sm:inline lg:hidden">{roleMeta.shortLabel}</span>
+            <span className="hidden lg:inline">{roleMeta.label}</span>
           </div>
 
           {/* User Avatar & Name in Top Bar */}
-          <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-surface-container-high">
+          <div className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 border-l border-surface-container-high">
             {userAvatar ? (
               <img
                 src={userAvatar}
                 alt={userName}
-                className="w-8 h-8 rounded-full object-cover border border-surface-container-high shadow-sm"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-surface-container-high shadow-sm"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold font-mono shadow-sm">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold font-mono shadow-sm">
                 {userName.slice(0, 2).toUpperCase()}
               </div>
             )}
-            <div className="hidden xl:flex flex-col text-left">
-              <span className="text-xs font-bold text-on-surface leading-tight truncate max-w-[130px]">{userName}</span>
-              <span className="text-[10px] text-on-surface-variant font-mono truncate max-w-[130px]">{userEmail}</span>
+            <div className="hidden 2xl:flex flex-col text-left">
+              <span className="text-xs font-bold text-on-surface leading-tight truncate max-w-[120px]">{userName}</span>
+              <span className="text-[10px] text-on-surface-variant font-mono truncate max-w-[120px]">{userEmail}</span>
             </div>
           </div>
 
           {/* Secure Sign Out Button in Top Bar */}
           <button
             onClick={() => signOut()}
-            className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold text-error bg-error-container/30 hover:bg-error-container/60 border border-error/20 flex items-center gap-1.5 transition-all active:scale-95"
+            className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl text-xs font-semibold text-error bg-error-container/30 hover:bg-error-container/60 border border-error/20 flex items-center gap-1 transition-all active:scale-95"
             title="Terminate session and sign out"
           >
-            <span className="material-symbols-outlined text-[18px]">logout</span>
-            <span className="hidden sm:inline">Sign Out</span>
+            <span className="material-symbols-outlined text-[17px] sm:text-[18px]">logout</span>
+            <span className="hidden md:inline">Sign Out</span>
           </button>
         </div>
       </header>
@@ -481,24 +484,26 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
       {/* ========================================================================= */}
       {/* 2. DOCKED DESKTOP SIDEBAR (FIXED, NEVER CRUSHED, NEVER SHRUNK)           */}
       {/* ========================================================================= */}
-      <aside className="hidden md:flex fixed top-16 left-0 bottom-0 w-64 bg-surface-container-lowest border-r border-surface-container-high/80 z-30 flex-col overflow-y-auto">
+      <aside className="hidden lg:flex fixed top-16 left-0 bottom-0 w-64 bg-surface-container-lowest border-r border-surface-container-high/80 z-30 flex-col overflow-y-auto">
         {renderSidebarContent(false)}
       </aside>
 
       {/* ========================================================================= */}
-      {/* 3. MOBILE SLIDE-OVER DRAWER WITH BACKDROP                                 */}
+      {/* 3. MOBILE & TABLET SLIDE-OVER DRAWER WITH BACKDROP                         */}
       {/* ========================================================================= */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden transition-opacity"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 lg:hidden transition-opacity"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
       )}
 
       <div
-        className={`fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-surface-container-lowest z-50 md:hidden flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 bottom-0 left-0 w-72 max-w-[85vw] bg-surface-container-lowest z-50 lg:hidden flex flex-col shadow-2xl transition-all duration-300 ease-in-out ${
+          mobileOpen
+            ? 'translate-x-0 opacity-100 visible'
+            : '-translate-x-full opacity-0 invisible pointer-events-none'
         } overflow-y-auto`}
       >
         {renderSidebarContent(true)}
@@ -507,17 +512,17 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
       {/* ========================================================================= */}
       {/* 4. MAIN CONTENT WRAPPER (NATURAL WINDOW SCROLL, NO GESTURE BLOCKING)      */}
       {/* ========================================================================= */}
-      <div className="md:pl-64 pt-16 min-h-screen w-full flex flex-col bg-surface">
+      <div className="lg:pl-64 pt-16 min-h-screen w-full max-w-full flex flex-col bg-surface overflow-x-hidden overflow-x-clip min-w-0">
         {/* Page Sub-Header / Breadcrumbs (if title or subtitle provided) */}
         {(title || subtitle) && (
-          <div className="px-4 sm:px-6 md:px-8 py-4 border-b border-surface-container-high/40 bg-surface-container-lowest/50">
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div>
-                <h1 className="text-base sm:text-lg font-bold text-on-surface tracking-tight">
+          <div className="px-4 sm:px-6 md:px-8 py-3.5 border-b border-surface-container-high/40 bg-surface-container-lowest/50 w-full max-w-full overflow-x-hidden overflow-x-clip">
+            <div className="max-w-7xl mx-auto flex items-center justify-between min-w-0">
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-bold text-on-surface tracking-tight truncate">
                   {title}
                 </h1>
                 {subtitle && (
-                  <p className="text-[11px] text-on-surface-variant font-mono mt-0.5">{subtitle}</p>
+                  <p className="text-[11px] text-on-surface-variant font-mono mt-0.5 truncate">{subtitle}</p>
                 )}
               </div>
             </div>
@@ -525,7 +530,7 @@ export function DashboardLayout({ children, portalRole, title, subtitle }: Dashb
         )}
 
         {/* Page Content Body - fluid natural scrolling for touchpad, mouse, touch */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 w-full max-w-7xl mx-auto">
+        <main className="flex-1 p-3 sm:p-5 md:p-8 w-full max-w-7xl mx-auto min-w-0 max-w-full overflow-x-hidden overflow-x-clip">
           {children}
         </main>
       </div>
