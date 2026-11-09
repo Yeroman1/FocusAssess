@@ -2,7 +2,11 @@ import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
+import { fileURLToPath } from 'url';
 import { RunnerJobRequest, RunnerJobResponse, RunnerExecutionStatus } from '@pyassess/shared';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const MAX_OUTPUT_BYTES = 64 * 1024; // 64 KB
 const DEFAULT_TIMEOUT_MS = 3000;    // 3 seconds
@@ -18,8 +22,46 @@ export async function executePythonSandbox(request: RunnerJobRequest): Promise<R
   const startTime = Date.now();
 
   try {
-    // 1. Write the solution code into the isolated ephemeral directory
-    await fs.writeFile(scriptPath, request.sourceCode, 'utf8');
+    // 1. Check if execution is a robot simulation verification job
+    let codeToExecute = request.sourceCode;
+    let actualStdin = request.stdin;
+
+    if (request.stdin && request.stdin.trim().startsWith('{"check_goal"')) {
+      try {
+        const goalPayload = JSON.parse(request.stdin);
+        const g = goalPayload.check_goal;
+        const targetAv = g.target_avenue !== undefined && g.target_avenue !== '' ? g.target_avenue : 'None';
+        const targetSt = g.target_street !== undefined && g.target_street !== '' ? g.target_street : 'None';
+        const targetDir = g.target_orientation && g.target_orientation !== 'ANY' ? JSON.stringify(g.target_orientation) : 'None';
+        const targetBeep = g.target_beepers !== undefined && g.target_beepers !== '' ? g.target_beepers : 'None';
+        const cleanWorld = Boolean(g.require_clean_world);
+
+        const verifyCall = `\n\n# --- FOCUSASSESS ROBOT VERIFICATION HARNESS ---\nimport cs1robots\ncs1robots.verify_robot_goal(\n    target_avenue=${targetAv},\n    target_street=${targetSt},\n    target_orientation=${targetDir},\n    target_beepers=${targetBeep},\n    require_clean_world=${cleanWorld ? 'True' : 'False'}\n)\n`;
+        codeToExecute += verifyCall;
+        actualStdin = ''; // consumed by harness
+      } catch {
+        // fallback to normal execution
+      }
+    }
+
+    // 2. Write the solution code into the isolated ephemeral directory
+    await fs.writeFile(scriptPath, codeToExecute, 'utf8');
+
+    // 3. Copy headless cs1robots.py into tempDir so 'from cs1robots import *' works seamlessly
+    const possibleCs1Paths = [
+      path.join(__dirname, 'cs1robots.py'),
+      path.resolve(process.cwd(), 'services/python-runner/src/cs1robots.py'),
+      path.resolve(process.cwd(), 'src/cs1robots.py'),
+    ];
+    for (const p of possibleCs1Paths) {
+      try {
+        const content = await fs.readFile(p, 'utf8');
+        await fs.writeFile(path.join(tempDir, 'cs1robots.py'), content, 'utf8');
+        break;
+      } catch {
+        // try next path
+      }
+    }
 
     // 2. Prepare minimal clean environment (strictly omit DB/Supabase/API secrets!)
     const cleanEnv: NodeJS.ProcessEnv = {
@@ -42,8 +84,8 @@ export async function executePythonSandbox(request: RunnerJobRequest): Promise<R
       let stderrBytes = 0;
       let executionStatus: RunnerExecutionStatus = 'SUCCESS';
 
-      // Run Python in isolated mode (-I) to ignore PYTHONPATH, user site-packages, and external state
-      const child = spawn(pythonCmd, ['-I', '-B', '-u', scriptPath], {
+      // Run Python in secure sandboxed mode (-E ignore env vars, -s ignore user site-packages, -B no bytecode)
+      const child = spawn(pythonCmd, ['-E', '-s', '-B', '-u', scriptPath], {
         cwd: tempDir,
         env: cleanEnv,
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -77,8 +119,8 @@ export async function executePythonSandbox(request: RunnerJobRequest): Promise<R
       }, timeoutMs);
 
       // Feed standard input
-      if (request.stdin) {
-        child.stdin.write(request.stdin);
+      if (actualStdin) {
+        child.stdin.write(actualStdin);
       }
       child.stdin.end();
 
