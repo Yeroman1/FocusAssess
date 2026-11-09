@@ -104,4 +104,24 @@ router.post('/attempts/:attemptId/grade-override', requireAuth, requireRole(['in
   return res.json({ updated: true, attempt: updated });
 });
 
+// Interactive Instructor Test Code Execution (for previewing questions/solutions in builder)
+router.post('/test-code', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const { sourceCode, stdin } = req.body;
+  if (typeof sourceCode !== 'string') {
+    return res.status(400).json({ error: 'sourceCode is required' });
+  }
+
+  try {
+    const result = await GradingService.callRunnerService({
+      jobId: `preview-${req.user!.id}-${Date.now()}`,
+      sourceCode,
+      stdin: stdin || '',
+      timeoutMs: 4000,
+    });
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Runner execution failed' });
+  }
+});
+
 export { router as instructorRoutes };
