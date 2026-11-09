@@ -231,3 +231,28 @@ export interface AttemptGradingSummary {
   resultsReleased: boolean;
   questions: QuestionGradingResult[];
 }
+
+// -----------------------------------------------------------------------------
+// 10. Robot Simulation (cs1robots) Domain Types & Verification Constants
+// -----------------------------------------------------------------------------
+export type RobotOrientation = 'N' | 'E' | 'S' | 'W';
+
+export interface RobotWorldConfig {
+  avenues: number;
+  streets: number;
+  startAvenue: number;
+  startStreet: number;
+  startOrientation: RobotOrientation;
+  startBeepers: number;
+}
+
+export interface RobotSimulationGoal {
+  target_avenue?: number;
+  target_street?: number;
+  target_orientation?: RobotOrientation | 'ANY';
+  target_beepers?: number;
+  require_clean_world?: boolean;
+}
+
+export const ROBOT_SIMULATION_PASSED_TOKEN = '[ROBOT_SIMULATION_PASSED]';
+export const ROBOT_SIMULATION_FAILED_TOKEN = '[ROBOT_SIMULATION_FAILED]';
