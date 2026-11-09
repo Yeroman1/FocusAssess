@@ -381,9 +381,18 @@ function ActiveExamWorkspaceContent() {
           }`}>
             <div className="flex items-start justify-between gap-2 border-b border-surface-container-high pb-3">
               <div>
-                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-surface-container text-secondary">
-                  Problem {activeQuestionIdx + 1}
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-surface-container text-secondary">
+                    Problem {activeQuestionIdx + 1}
+                  </span>
+                  {(activeQuestion.title?.toLowerCase().includes('robot') ||
+                    activeQuestion.constraints?.toLowerCase().includes('cs1robots')) && (
+                    <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 font-mono text-[11px] font-bold flex items-center gap-1 border border-purple-500/30">
+                      <span className="material-symbols-outlined text-[14px]">smart_toy</span>
+                      <span>cs1robots Simulation</span>
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-base sm:text-lg font-bold text-on-surface mt-1">{activeQuestion.title}</h2>
               </div>
               <span className="px-2.5 py-1 rounded-lg bg-surface-container-high text-on-surface font-mono text-xs font-bold flex-shrink-0">
@@ -393,7 +402,16 @@ function ActiveExamWorkspaceContent() {
 
             {/* Question Attached Photo / Diagram (Displayed before question text) */}
             {activeQuestion.imageUrl && (
-              <div className="rounded-xl overflow-hidden border border-surface-container-high bg-surface-container-low shadow-sm p-2 flex justify-center">
+              <div className="rounded-xl overflow-hidden border border-surface-container-high bg-surface-container-low shadow-sm p-2 flex flex-col items-center">
+                {(activeQuestion.title?.toLowerCase().includes('robot') ||
+                  activeQuestion.constraints?.toLowerCase().includes('cs1robots')) && (
+                  <div className="w-full pb-1 mb-1 border-b border-surface-container-high/60 flex items-center justify-between text-[11px] font-mono text-purple-600 dark:text-purple-400 font-bold">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px]">flag</span>
+                      <span>Target Output Goal (Final World State)</span>
+                    </span>
+                  </div>
+                )}
                 <img
                   src={activeQuestion.imageUrl}
                   alt={activeQuestion.title ? `${activeQuestion.title} diagram` : 'Question diagram'}
@@ -638,6 +656,17 @@ function ActiveExamWorkspaceContent() {
 }
 
 function getDefaultStarterCode(title: string): string {
+  if (title?.toLowerCase().includes('robot') || title?.toLowerCase().includes('cs1robots')) {
+    return `from cs1robots import *
+
+# Initialize world and robot
+create_world(avenues=10, streets=10)
+hubot = Robot(avenue=1, street=1, orientation='E', beepers=0)
+
+# --- WRITE YOUR SOLUTION CODE BELOW ---
+`;
+  }
+
   return `# Python 3.12 Solution for: ${title}
 import sys
 
