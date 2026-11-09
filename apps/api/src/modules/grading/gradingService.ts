@@ -40,6 +40,11 @@ export function compareOutputs(
     return normActual.toLowerCase() === normExpected.toLowerCase();
   }
 
+  // Robot simulation verification check
+  if (normExpected.includes('[ROBOT_SIMULATION_PASSED]')) {
+    return normActual.includes('[ROBOT_SIMULATION_PASSED]');
+  }
+
   // Default: TRIMMED_TEXT
   return normActual === normExpected;
 }
