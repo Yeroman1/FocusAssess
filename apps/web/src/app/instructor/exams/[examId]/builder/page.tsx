@@ -7,7 +7,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { fetchWithAuth } from '@/lib/api';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
-type QuestionType = 'CODE' | 'TRUE_FALSE' | 'MCQ_SINGLE' | 'MCQ_MULTI' | 'SHORT_ANSWER';
+type QuestionType = 'CODE' | 'TRUE_FALSE' | 'MCQ_SINGLE' | 'MCQ_MULTI' | 'SHORT_ANSWER' | 'ROBOT_SIMULATION';
 
 interface TestCaseItem {
   id?: string;
@@ -138,6 +138,35 @@ function ExamBuilderContent() {
   // State for Short Answer / Output Prediction
   const [shortAnswerExpected, setShortAnswerExpected] = useState('');
 
+  // State for Robot Simulation (cs1robots) Question
+  const [robotAvenues, setRobotAvenues] = useState<number>(10);
+  const [robotStreets, setRobotStreets] = useState<number>(10);
+  const [robotStartAv, setRobotStartAv] = useState<number>(1);
+  const [robotStartSt, setRobotStartSt] = useState<number>(1);
+  const [robotStartDir, setRobotStartDir] = useState<'E' | 'N' | 'W' | 'S'>('E');
+  const [robotStartBeepers, setRobotStartBeepers] = useState<number>(0);
+
+  // Target Goal Criteria for Automated Grading
+  const [robotTargetAv, setRobotTargetAv] = useState<number | ''>(10);
+  const [robotTargetSt, setRobotTargetSt] = useState<number | ''>(1);
+  const [robotTargetDir, setRobotTargetDir] = useState<'ANY' | 'E' | 'N' | 'W' | 'S'>('E');
+  const [robotTargetBeepers, setRobotTargetBeepers] = useState<number | ''>(0);
+  const [robotRequireClean, setRobotRequireClean] = useState<boolean>(false);
+
+  // Starter Code & Live Sandbox Test Runner for Instructor
+  const [robotStarterCode, setRobotStarterCode] = useState<string>(
+    `from cs1robots import *\n\n# Initialize world (10x10)\ncreate_world(avenues=10, streets=10)\nhubot = Robot(avenue=1, street=1, orientation='E', beepers=0)\n\n# --- WRITE YOUR SOLUTION CODE BELOW ---`
+  );
+  const [robotTestCode, setRobotTestCode] = useState<string>(
+    `from cs1robots import *\n\ncreate_world(avenues=10, streets=10)\nhubot = Robot(avenue=1, street=1, orientation='E', beepers=0)\n\n# Navigate to target (10, 1)\nfor _ in range(9):\n    hubot.move()\n`
+  );
+  const [isTestingSolution, setIsTestingSolution] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    status: 'idle' | 'success' | 'failed' | 'error';
+    message: string;
+    durationMs?: number;
+  }>({ status: 'idle', message: '' });
+
   // Submission & Publish States
   const [isSavingQuestion, setIsSavingQuestion] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -222,6 +251,18 @@ function ExamBuilderContent() {
     setShortAnswerExpected('');
     setTfStatement('');
     setTfCorrect(true);
+    setRobotAvenues(10);
+    setRobotStreets(10);
+    setRobotStartAv(1);
+    setRobotStartSt(1);
+    setRobotStartDir('E');
+    setRobotStartBeepers(0);
+    setRobotTargetAv(10);
+    setRobotTargetSt(1);
+    setRobotTargetDir('E');
+    setRobotTargetBeepers(0);
+    setRobotRequireClean(false);
+    setTestResult({ status: 'idle', message: '' });
     setQImage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (tfFileInputRef.current) tfFileInputRef.current.value = '';
@@ -264,6 +305,68 @@ function ExamBuilderContent() {
     );
   };
 
+  // Live Sandbox Simulation Tester for Instructor
+  const handleTestSimulation = async () => {
+    setIsTestingSolution(true);
+    setTestResult({ status: 'idle', message: 'Executing simulation in sandbox kernel...' });
+
+    const goalPayload = {
+      check_goal: {
+        target_avenue: robotTargetAv !== '' ? Number(robotTargetAv) : undefined,
+        target_street: robotTargetSt !== '' ? Number(robotTargetSt) : undefined,
+        target_orientation: robotTargetDir !== 'ANY' ? robotTargetDir : undefined,
+        target_beepers: robotTargetBeepers !== '' ? Number(robotTargetBeepers) : undefined,
+        require_clean_world: robotRequireClean,
+      },
+    };
+
+    try {
+      const res = await fetchWithAuth('/instructor/test-code', {
+        method: 'POST',
+        body: JSON.stringify({
+          sourceCode: robotTestCode,
+          stdin: JSON.stringify(goalPayload),
+        }),
+      });
+
+      const stdout = res.stdout || '';
+      const stderr = res.stderr || '';
+
+      if (stdout.includes('[ROBOT_SIMULATION_PASSED]')) {
+        setTestResult({
+          status: 'success',
+          message: stdout.trim(),
+          durationMs: res.durationMs,
+        });
+      } else if (stdout.includes('[ROBOT_SIMULATION_FAILED]')) {
+        setTestResult({
+          status: 'failed',
+          message: stdout.trim(),
+          durationMs: res.durationMs,
+        });
+      } else if (res.executionStatus !== 'SUCCESS' || stderr) {
+        setTestResult({
+          status: 'error',
+          message: stderr || res.error || 'Execution encountered a runtime error.',
+          durationMs: res.durationMs,
+        });
+      } else {
+        setTestResult({
+          status: 'failed',
+          message: stdout.trim() || 'No simulation output received from simulator.',
+          durationMs: res.durationMs,
+        });
+      }
+    } catch (err: any) {
+      setTestResult({
+        status: 'error',
+        message: err.message || 'Failed to communicate with sandbox runner.',
+      });
+    } finally {
+      setIsTestingSolution(false);
+    }
+  };
+
   // Save Question to Exam
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,7 +374,66 @@ function ExamBuilderContent() {
     setErrorMsg(null);
 
     try {
-      // 1. Specialized handler for TRUE_FALSE (no title, no description, single text field)
+      // 1. Specialized handler for ROBOT_SIMULATION
+      if (selectedType === 'ROBOT_SIMULATION') {
+        if (!qTitle.trim()) {
+          throw new Error('Please enter a title for the robot simulation problem.');
+        }
+        if (!qStatement.trim()) {
+          throw new Error('Please enter the question statement / instructions.');
+        }
+        if (qMarks <= 0) {
+          throw new Error('Question marks must be greater than zero.');
+        }
+
+        const goalPayload = {
+          check_goal: {
+            target_avenue: robotTargetAv !== '' ? Number(robotTargetAv) : undefined,
+            target_street: robotTargetSt !== '' ? Number(robotTargetSt) : undefined,
+            target_orientation: robotTargetDir !== 'ANY' ? robotTargetDir : undefined,
+            target_beepers: robotTargetBeepers !== '' ? Number(robotTargetBeepers) : undefined,
+            require_clean_world: robotRequireClean,
+          },
+        };
+
+        const targetDesc = [
+          robotTargetAv !== '' && robotTargetSt !== '' ? `Avenue ${robotTargetAv}, Street ${robotTargetSt}` : '',
+          robotTargetDir !== 'ANY' ? `Facing ${robotTargetDir}` : '',
+          robotTargetBeepers !== '' ? `${robotTargetBeepers} beeper(s)` : '',
+          robotRequireClean ? 'Ground cleared of beepers' : '',
+        ].filter(Boolean).join(' | ');
+
+        const formattedStatement = `${qStatement.trim()}\n\n---\n### 🤖 Simulation Specifications & Starting World\n- **World Grid Size:** ${robotAvenues} Avenues × ${robotStreets} Streets\n- **Robot Start Location:** Avenue ${robotStartAv}, Street ${robotStartSt}, Facing **${robotStartDir}**\n- **Robot Start Bag:** ${robotStartBeepers} beeper(s)\n- **Target Success State:** ${targetDesc || 'Specified in target photo'}\n\n*Note: Use the standard \`cs1robots\` library methods (\`move()\`, \`turn_left()\`, \`pick_beeper()\`, \`drop_beeper()\`, \`front_is_clear()\`, etc.). Crashing into walls or boundaries will fail the simulation.*`;
+
+        await fetchWithAuth(`/exams/${examId}/questions-with-testcases`, {
+          method: 'POST',
+          body: JSON.stringify({
+            title: `[Robot Simulation] ${qTitle.trim()}`,
+            statement: formattedStatement,
+            imageUrl: qImage || null,
+            inputDescription: `Grid: ${robotAvenues}x${robotStreets}. Starts at (${robotStartAv}, ${robotStartSt}) facing ${robotStartDir}.`,
+            outputDescription: `Target: ${targetDesc || 'State in photo'}`,
+            constraints: 'cs1robots Python 3.12 Simulation. Zero wall collisions allowed.',
+            maxMarks: Number(qMarks),
+            position: questions.length + 1,
+            testCases: [
+              {
+                stdin: JSON.stringify(goalPayload),
+                expectedOutput: '[ROBOT_SIMULATION_PASSED]',
+                marks: Number(qMarks),
+                isHidden: false,
+                comparisonMode: 'TRIMMED_TEXT',
+              },
+            ],
+          }),
+        });
+
+        await loadExam();
+        resetQuestionForm();
+        return;
+      }
+
+      // 2. Specialized handler for TRUE_FALSE (no title, no description, single text field)
       if (selectedType === 'TRUE_FALSE') {
         if (!tfStatement.trim()) {
           throw new Error(`Please enter the statement for Question ${questions.length + 1}.`);
@@ -964,7 +1126,7 @@ function ExamBuilderContent() {
               <label className="text-xs font-bold text-on-surface block">
                 Select Item Format <span className="text-error">*</span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
                 <button
                   type="button"
                   onClick={() => setSelectedType('CODE')}
@@ -979,6 +1141,26 @@ function ExamBuilderContent() {
                     <span className="text-xs">Python Code</span>
                   </div>
                   <span className="text-[10px] opacity-80 font-normal">Algorithm & Tests</span>
+                </button>
+
+                {/* ROBOT SIMULATION ITEM FORMAT */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedType('ROBOT_SIMULATION');
+                    setQMarks(20);
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-xl border text-left flex flex-col gap-1 transition-all active:scale-[0.98] ${
+                    selectedType === 'ROBOT_SIMULATION'
+                      ? 'bg-purple-500/10 border-purple-500 text-purple-600 dark:text-purple-400 font-bold shadow-sm ring-1 ring-purple-500'
+                      : 'bg-surface-container-low border-surface-container-high text-on-surface-variant hover:bg-surface-container'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px] text-purple-500">smart_toy</span>
+                    <span className="text-xs">Robot Sim</span>
+                  </div>
+                  <span className="text-[10px] opacity-80 font-normal">cs1robots World</span>
                 </button>
 
                 {/* TRUE / FALSE ITEM FORMAT */}
@@ -1052,7 +1234,375 @@ function ExamBuilderContent() {
             </div>
 
             {/* CONDITIONAL FORM INPUTS BASED ON QUESTION FORMAT */}
-            {selectedType === 'TRUE_FALSE' ? (
+            {selectedType === 'ROBOT_SIMULATION' ? (
+              <div className="space-y-6 pt-1">
+                {/* 1. Basic Info: Title & Marks */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-3">
+                    <label className="text-xs font-bold text-on-surface block mb-1">
+                      Robot Problem Title <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={qTitle}
+                      onChange={(e) => setQTitle(e.target.value)}
+                      placeholder="e.g. Lab 2: Hurdle Race & Beeper Harvest"
+                      className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs text-on-surface border border-surface-container-high focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-on-surface block mb-1">
+                      Marks / Points <span className="text-error">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={qMarks}
+                      onChange={(e) => setQMarks(Number(e.target.value))}
+                      className="w-full h-10 px-3 bg-surface-container-low rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Instructions / Statement */}
+                <div>
+                  <label className="text-xs font-bold text-on-surface block mb-1">
+                    Problem Statement & Mission Instructions <span className="text-error">*</span>
+                  </label>
+                  <textarea
+                    value={qStatement}
+                    onChange={(e) => setQStatement(e.target.value)}
+                    rows={4}
+                    placeholder="Describe the challenge: e.g. Navigate the robot through hurdles, pick up all beepers on the path, and stop at the final destination shown in the target photo..."
+                    className="w-full p-3 bg-surface-container-low rounded-xl text-xs text-on-surface border border-surface-container-high focus:outline-none focus:ring-1 focus:ring-purple-500 font-sans leading-relaxed resize-none"
+                    required
+                  />
+                </div>
+
+                {/* 3. Photo Upload: Final World Target Photo */}
+                <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container-high/80 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[18px] text-purple-500">add_a_photo</span>
+                        <span>Target Final World Photo (Visual Output Goal)</span>
+                      </span>
+                      <p className="text-[11px] text-on-surface-variant">
+                        Upload a screenshot or diagram showing what the final world and robot destination look like. Students will see this image side-by-side with their code editor.
+                      </p>
+                    </div>
+
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="robot-question-photo"
+                      />
+                      <label
+                        htmlFor="robot-question-photo"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-semibold font-mono cursor-pointer border border-purple-500/30 transition-all active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">upload</span>
+                        <span>{qImage ? 'Change Photo' : 'Upload Target Photo'}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {qImage && (
+                    <div className="relative max-w-md rounded-xl overflow-hidden border border-purple-500/40 bg-surface-container p-2">
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-surface-container-high">
+                        <span className="text-[10px] font-mono text-purple-400 font-bold flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                          <span>Target Image Attached (Displayed in Student Workspace)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="px-1.5 py-0.5 rounded text-error hover:bg-error-container/20 text-[10px] font-mono flex items-center gap-0.5"
+                        >
+                          <span className="material-symbols-outlined text-[13px]">delete</span>
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                      <img
+                        src={qImage}
+                        alt="Target World Preview"
+                        className="max-h-56 w-auto object-contain rounded-lg mx-auto"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Starting World Configuration */}
+                <div className="p-4 rounded-2xl bg-surface-container-low border border-surface-container-high/80 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-blue-500">grid_4x4</span>
+                    <span className="text-xs font-bold text-on-surface">Starting World & Robot Setup</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Avenues (Width)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={robotAvenues}
+                        onChange={(e) => setRobotAvenues(Math.max(1, Number(e.target.value)))}
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Streets (Height)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={robotStreets}
+                        onChange={(e) => setRobotStreets(Math.max(1, Number(e.target.value)))}
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Start Avenue</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={robotAvenues}
+                        value={robotStartAv}
+                        onChange={(e) => setRobotStartAv(Math.max(1, Number(e.target.value)))}
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Start Street</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={robotStreets}
+                        value={robotStartSt}
+                        onChange={(e) => setRobotStartSt(Math.max(1, Number(e.target.value)))}
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Start Direction</label>
+                      <select
+                        value={robotStartDir}
+                        onChange={(e) => setRobotStartDir(e.target.value as any)}
+                        className="w-full h-9 px-2 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      >
+                        <option value="E">East (➔)</option>
+                        <option value="N">North (⬆)</option>
+                        <option value="W">West (⬅)</option>
+                        <option value="S">South (⬇)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Start Beepers</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={robotStartBeepers}
+                        onChange={(e) => setRobotStartBeepers(Math.max(0, Number(e.target.value)))}
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Target Goal & Automated Grading Rules (Zero-Code Verification) */}
+                <div className="p-4 rounded-2xl bg-surface-container-low border border-purple-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-purple-500">task_alt</span>
+                      <span className="text-xs font-bold text-on-surface">Target Success Criteria (Automated Grading)</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 font-bold">
+                      Zero-Code Autograder
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant">
+                    FocusAssess evaluates the student robot's final state against these conditions. Leave fields blank if any outcome is acceptable.
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Target Avenue</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={robotAvenues}
+                        value={robotTargetAv}
+                        onChange={(e) => setRobotTargetAv(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Any"
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Target Street</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={robotStreets}
+                        value={robotTargetSt}
+                        onChange={(e) => setRobotTargetSt(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Any"
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Target Direction</label>
+                      <select
+                        value={robotTargetDir}
+                        onChange={(e) => setRobotTargetDir(e.target.value as any)}
+                        className="w-full h-9 px-2 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      >
+                        <option value="E">East (➔)</option>
+                        <option value="N">North (⬆)</option>
+                        <option value="W">West (⬅)</option>
+                        <option value="S">South (⬇)</option>
+                        <option value="ANY">Any Direction</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-mono text-on-surface-variant block mb-1">Target Beepers in Bag</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={robotTargetBeepers}
+                        onChange={(e) => setRobotTargetBeepers(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="Any"
+                        className="w-full h-9 px-2.5 bg-surface-container rounded-xl text-xs font-mono font-bold text-on-surface border border-surface-container-high"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-surface-container-high/60 flex flex-wrap items-center gap-4 text-xs">
+                    <label className="flex items-center gap-2 cursor-pointer font-medium text-on-surface">
+                      <input
+                        type="checkbox"
+                        checked={robotRequireClean}
+                        onChange={(e) => setRobotRequireClean(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span>Require Ground Cleared (all ground beepers must be collected)</span>
+                    </label>
+
+                    <div className="flex items-center gap-1.5 text-on-surface-variant font-mono text-[11px] ml-auto">
+                      <span className="material-symbols-outlined text-[15px] text-emerald-500">security</span>
+                      <span>Wall Crash Protection Active</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 6. Live Simulation Sandbox (Test My Solution) */}
+                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 text-slate-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-emerald-400">science</span>
+                      <span className="text-xs font-bold text-white font-mono">Test-Run Model Solution (Simulator Sandbox)</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isTestingSolution}
+                      onClick={handleTestSimulation}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                      <span>{isTestingSolution ? 'Testing Simulation...' : 'Test Simulation'}</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    Paste your solution script below and test it live. FocusAssess executes it in the headless runner to verify your question criteria.
+                  </p>
+
+                  <textarea
+                    value={robotTestCode}
+                    onChange={(e) => setRobotTestCode(e.target.value)}
+                    rows={6}
+                    className="w-full p-3 bg-slate-950 text-emerald-400 font-mono text-xs rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none leading-relaxed"
+                  />
+
+                  {/* Test Result Feedback Pill */}
+                  {testResult.status !== 'idle' && (
+                    <div
+                      className={`p-3 rounded-xl font-mono text-xs border flex items-start gap-2 ${
+                        testResult.status === 'success'
+                          ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
+                          : testResult.status === 'failed'
+                          ? 'bg-rose-950/80 border-rose-500/50 text-rose-300'
+                          : 'bg-amber-950/80 border-amber-500/50 text-amber-300'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px] flex-shrink-0 mt-0.5">
+                        {testResult.status === 'success'
+                          ? 'check_circle'
+                          : testResult.status === 'failed'
+                          ? 'cancel'
+                          : 'error'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold">
+                            {testResult.status === 'success'
+                              ? 'Simulation Verified Successfully!'
+                              : testResult.status === 'failed'
+                              ? 'Simulation Goal Not Met'
+                              : 'Simulation Error'}
+                          </span>
+                          {testResult.durationMs !== undefined && (
+                            <span className="text-[10px] opacity-75">
+                              {testResult.durationMs}ms
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap break-all text-[11px]">
+                          {testResult.message}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Save and Cancel Buttons */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-surface-container-high">
+                  <button
+                    type="button"
+                    onClick={resetQuestionForm}
+                    className="px-4 py-2 rounded-xl bg-surface-container text-on-surface font-semibold text-xs hover:bg-surface-container-high transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingQuestion}
+                    className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">save</span>
+                    <span>{isSavingQuestion ? 'Saving Robot Question...' : 'Save Robot Question'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : selectedType === 'TRUE_FALSE' ? (
               <div className="space-y-4 pt-1">
                 {/* Single text field labelled with number automatically */}
                 <div>
