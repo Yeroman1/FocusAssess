@@ -220,9 +220,9 @@ export class AttemptService {
     const startedAt = new Date();
     const deadlineAt = new Date(startedAt.getTime() + exam.durationMinutes * 60 * 1000);
 
-    return await prisma.$transaction(async (tx) => {
+    const attempt = await prisma.$transaction(async (tx) => {
       // 1. Create the single attempt
-      const attempt = await tx.examAttempt.create({
+      const created = await tx.examAttempt.create({
         data: {
           examId,
           examVersionId: currentVersion.id,
@@ -248,21 +248,23 @@ export class AttemptService {
         });
       }
 
-      await recordAuditEvent({
-        actorId: studentId,
-        action: 'EXAM_ATTEMPT_STARTED',
-        targetType: 'ExamAttempt',
-        targetId: attempt.id,
-        metadata: {
-          examId,
-          examKeyId: matchingKey?.id,
-          durationMinutes: exam.durationMinutes,
-          deadlineAt: deadlineAt.toISOString(),
-        },
-      });
+      return created;
+    }, { maxWait: 15000, timeout: 30000 });
 
-      return attempt;
+    await recordAuditEvent({
+      actorId: studentId,
+      action: 'EXAM_ATTEMPT_STARTED',
+      targetType: 'ExamAttempt',
+      targetId: attempt.id,
+      metadata: {
+        examId,
+        examKeyId: matchingKey?.id,
+        durationMinutes: exam.durationMinutes,
+        deadlineAt: deadlineAt.toISOString(),
+      },
     });
+
+    return attempt;
   }
 
   /**
@@ -375,7 +377,7 @@ export class AttemptService {
       });
 
       return finalized;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     await recordAuditEvent({
       actorId: studentId,
@@ -412,6 +414,6 @@ export class AttemptService {
       });
 
       return attempt;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
   }
 }
