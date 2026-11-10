@@ -4,7 +4,7 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.
 
 export async function fetchWithAuth<T = any>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit & { timeoutMs?: number } = {}
 ): Promise<T> {
   const customHeaders = (options.headers as Record<string, string>) || {};
   let token = customHeaders['Authorization']?.replace(/^Bearer\s+/i, '') ||
@@ -36,9 +36,10 @@ export async function fetchWithAuth<T = any>(
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
-  // Add 10-second timeout to prevent infinite hanging
+  // Resilient timeout (default 45 seconds) to accommodate remote database transaction latency
+  const timeoutMs = options.timeoutMs || 45000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
