@@ -65,3 +65,4 @@ if __name__ == '__main__':
     test_beepers()
     test_goal_verification()
     print("All cs1robots unit tests passed successfully!")
+
