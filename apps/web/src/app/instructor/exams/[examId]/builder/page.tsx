@@ -421,7 +421,7 @@ function ExamBuilderContent() {
                 stdin: JSON.stringify(goalPayload),
                 expectedOutput: '[ROBOT_SIMULATION_PASSED]',
                 marks: Number(qMarks),
-                isHidden: false,
+                isHidden: true,
                 comparisonMode: 'TRIMMED_TEXT',
               },
             ],
@@ -452,7 +452,7 @@ function ExamBuilderContent() {
             statement: tfStatement.trim(),
             imageUrl: qImage || null,
             inputDescription: 'Select whether the statement is True or False.',
-            outputDescription: `Expected answer: ${expectedVal}`,
+            outputDescription: 'Select whether the statement is True or False.',
             constraints: 'True / False Question',
             maxMarks: Number(qMarks) || 5,
             position: questions.length + 1,
@@ -461,7 +461,7 @@ function ExamBuilderContent() {
                 stdin: '',
                 expectedOutput: expectedVal,
                 marks: Number(qMarks) || 5,
-                isHidden: false,
+                isHidden: true,
                 comparisonMode: 'TRIMMED_TEXT',
               },
             ],
@@ -502,7 +502,6 @@ function ExamBuilderContent() {
           comparisonMode: tc.comparisonMode,
         }));
       } else if (selectedType === 'MCQ_SINGLE') {
-        const correctOption = mcqOptions[mcqCorrectIdx] || 'Option A';
         const formattedStatement = `${qStatement}\n\n**Options:**\n${mcqOptions
           .map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`)
           .join('\n')}`;
@@ -512,7 +511,7 @@ function ExamBuilderContent() {
             stdin: '',
             expectedOutput: String.fromCharCode(65 + mcqCorrectIdx),
             marks: Number(qMarks),
-            isHidden: false,
+            isHidden: true,
             comparisonMode: 'TRIMMED_TEXT',
           },
         ];
@@ -525,7 +524,7 @@ function ExamBuilderContent() {
             statement: formattedStatement,
             imageUrl: qImage || null,
             inputDescription: 'Select the correct letter corresponding to the answer (A, B, C, D).',
-            outputDescription: `Expected answer: ${String.fromCharCode(65 + mcqCorrectIdx)} (${correctOption})`,
+            outputDescription: 'Select the correct option (A, B, C, D).',
             constraints: 'Single Choice Evaluation',
             maxMarks: Number(qMarks),
             position: questions.length + 1,
@@ -551,7 +550,7 @@ function ExamBuilderContent() {
             stdin: '',
             expectedOutput: correctLetters,
             marks: Number(qMarks),
-            isHidden: false,
+            isHidden: true,
             comparisonMode: 'TRIMMED_TEXT',
           },
         ];
@@ -563,7 +562,7 @@ function ExamBuilderContent() {
             statement: formattedStatement,
             imageUrl: qImage || null,
             inputDescription: 'Select all correct option letters (comma-separated, e.g. A, C).',
-            outputDescription: `Expected answers: ${correctLetters}`,
+            outputDescription: 'Select all options that apply.',
             constraints: 'Multiple Choice Evaluation',
             maxMarks: Number(qMarks),
             position: questions.length + 1,
@@ -584,7 +583,7 @@ function ExamBuilderContent() {
             stdin: '',
             expectedOutput: shortAnswerExpected.trim(),
             marks: Number(qMarks),
-            isHidden: false,
+            isHidden: true,
             comparisonMode: 'TRIMMED_TEXT',
           },
         ];
@@ -596,7 +595,7 @@ function ExamBuilderContent() {
             statement: qStatement,
             imageUrl: qImage || null,
             inputDescription: 'None / Direct Output Prediction',
-            outputDescription: 'Exact output string predicted from code execution',
+            outputDescription: 'Enter the exact predicted output string.',
             constraints: 'Standard Output Match',
             maxMarks: Number(qMarks),
             position: questions.length + 1,
@@ -798,6 +797,15 @@ function ExamBuilderContent() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              href={`/instructor/exams/${examId}/preview`}
+              className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-secondary hover:text-primary transition-colors flex items-center gap-1.5 border border-surface-container-high shadow-xs"
+              title="Preview the exact student exam sheet anytime"
+            >
+              <span className="material-symbols-outlined text-[16px]">visibility</span>
+              <span>Preview Exam Sheet</span>
+            </Link>
+
             <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase ${
               exam?.status === 'published'
                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
