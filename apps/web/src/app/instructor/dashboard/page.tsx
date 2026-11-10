@@ -243,6 +243,16 @@ function InstructorDashboardContent() {
                           </button>
                         )}
 
+                        {/* Direct Preview Button - Available anytime for all exams (Draft, Published, Closed) */}
+                        <Link
+                          href={`/instructor/exams/${ex.id}/preview`}
+                          className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-secondary hover:text-primary transition-colors flex items-center gap-1.5 border border-surface-container-high shadow-xs"
+                          title="Preview student exam sheet anytime"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          <span>Preview</span>
+                        </Link>
+
                         {isDraft ? (
                           <Link
                             href={`/instructor/exams/${ex.id}/builder`}
@@ -252,23 +262,14 @@ function InstructorDashboardContent() {
                             <span>Question Builder</span>
                           </Link>
                         ) : (
-                          <>
-                            <Link
-                              href={`/instructor/exams/${ex.id}/builder`}
-                              className="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-medium text-on-surface transition-colors flex items-center gap-1"
-                              title="View questions and settings"
-                            >
-                              <span className="material-symbols-outlined text-[15px]">settings</span>
-                              <span>Builder</span>
-                            </Link>
-                            <Link
-                              href={`/student/exams/${ex.id}/instructions`}
-                              className="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-medium text-on-surface transition-colors flex items-center gap-1"
-                            >
-                              <span className="material-symbols-outlined text-[15px]">visibility</span>
-                              <span>Preview</span>
-                            </Link>
-                          </>
+                          <Link
+                            href={`/instructor/exams/${ex.id}/builder`}
+                            className="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-medium text-on-surface transition-colors flex items-center gap-1"
+                            title="View questions and settings"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">settings</span>
+                            <span>Builder</span>
+                          </Link>
                         )}
                       </div>
                     </div>
