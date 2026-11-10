@@ -180,23 +180,61 @@ router.get('/attempts/:attemptId', requireAuth, async (req: AuthenticatedRequest
       answersMap[a.questionId] = a.sourceCode;
     }
 
-    // Sanitize questions: only include public examples! Hidden test cases are never disclosed.
-    const questions = attempt.examVersion.questions.map((q) => ({
-      id: q.id,
-      title: q.title,
-      statement: q.statement,
-      inputDescription: q.inputDescription,
-      outputDescription: q.outputDescription,
-      constraints: q.constraints,
-      maxMarks: q.maxMarks,
-      position: q.position,
-      imageUrl: q.imageUrl || null,
-      publicExamples: q.testCases.map((tc) => ({
-        stdin: tc.stdin,
-        expectedOutput: tc.expectedOutput,
-      })),
-      savedSourceCode: answersMap[q.id] || '',
-    }));
+    // Sanitize questions: STRICT SECURITY
+    // 1. Never leak answers or test cases for non-code questions (True/False, MCQ, Short Answer, Robot)
+    // 2. Sanitize outputDescription to ensure no "Expected answer" leaks
+    const questions = attempt.examVersion.questions.map((q) => {
+      const constraints = (q.constraints || '').toLowerCase();
+      const title = (q.title || '').toLowerCase();
+      const isNonCode =
+        constraints.includes('true / false') ||
+        constraints.includes('single choice') ||
+        constraints.includes('multiple choice') ||
+        constraints.includes('standard output match') ||
+        constraints.includes('cs1robots') ||
+        title.startsWith('[mcq') ||
+        title.startsWith('[multi') ||
+        title.startsWith('[robot') ||
+        title.startsWith('[output prediction');
+
+      // Sanitize outputDescription to eliminate any leaked answers
+      let cleanOutputDesc = q.outputDescription || '';
+      if (cleanOutputDesc.toLowerCase().includes('expected answer')) {
+        if (constraints.includes('true / false')) {
+          cleanOutputDesc = 'Select True or False.';
+        } else if (constraints.includes('single choice')) {
+          cleanOutputDesc = 'Select one correct option.';
+        } else if (constraints.includes('multiple choice')) {
+          cleanOutputDesc = 'Select all options that apply.';
+        } else {
+          cleanOutputDesc = 'Enter your predicted output.';
+        }
+      }
+
+      // For non-code questions or robot simulation, NEVER expose test cases with expected outputs to students
+      const publicExamples = isNonCode
+        ? []
+        : q.testCases
+            .filter((tc) => !tc.isHidden)
+            .map((tc) => ({
+              stdin: tc.stdin,
+              expectedOutput: tc.expectedOutput,
+            }));
+
+      return {
+        id: q.id,
+        title: q.title,
+        statement: q.statement,
+        inputDescription: q.inputDescription,
+        outputDescription: cleanOutputDesc,
+        constraints: q.constraints,
+        maxMarks: q.maxMarks,
+        position: q.position,
+        imageUrl: q.imageUrl || null,
+        publicExamples,
+        savedSourceCode: answersMap[q.id] || '',
+      };
+    });
 
     return res.json({
       attempt: {
