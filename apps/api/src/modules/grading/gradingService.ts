@@ -40,6 +40,13 @@ export function compareOutputs(
     return normActual.toLowerCase() === normExpected.toLowerCase();
   }
 
+  // Resilient MCQ single/multi letter comparison (e.g. "A" === "A" or "A, B" === "B, A")
+  const isMcqFormat = /^[A-Z](,\s*[A-Z])*$/i.test(normExpected);
+  if (isMcqFormat) {
+    const splitSort = (s: string) => s.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean).sort().join(',');
+    return splitSort(normActual) === splitSort(normExpected);
+  }
+
   // Robot simulation verification check
   if (normExpected.includes('[ROBOT_SIMULATION_PASSED]')) {
     return normActual.includes('[ROBOT_SIMULATION_PASSED]');
@@ -143,32 +150,42 @@ export class GradingService {
           let durationMs = 0;
           let errorMessage: string | undefined;
 
-          try {
-            const runnerResult = await this.callRunnerService({
-              jobId: `att-${attemptId}-q-${question.id}-tc-${tc.id}`,
-              sourceCode,
-              stdin: tc.stdin,
-              timeoutMs: 3000,
-            });
+          // 1. Check direct textual match first (instant evaluation for True/False, MCQ, Short Answer)
+          if (compareOutputs(sourceCode, tc.expectedOutput, tc.comparisonMode)) {
+            testPassed = true;
+            marksAwarded = tc.marks;
+            questionPassedMarks += tc.marks;
+            executionStatus = 'SUCCESS';
+            durationMs = 1;
+          } else {
+            // 2. Otherwise execute code against Python runner (for Code, Robot Simulation, and print-based scripts)
+            try {
+              const runnerResult = await this.callRunnerService({
+                jobId: `att-${attemptId}-q-${question.id}-tc-${tc.id}`,
+                sourceCode,
+                stdin: tc.stdin,
+                timeoutMs: 3000,
+              });
 
-            durationMs = runnerResult.durationMs;
-            executionStatus = runnerResult.executionStatus;
+              durationMs = runnerResult.durationMs;
+              executionStatus = runnerResult.executionStatus;
 
-            if (runnerResult.executionStatus === 'SUCCESS') {
-              testPassed = compareOutputs(runnerResult.stdout, tc.expectedOutput, tc.comparisonMode);
-              if (testPassed) {
-                marksAwarded = tc.marks;
-                questionPassedMarks += tc.marks;
+              if (runnerResult.executionStatus === 'SUCCESS') {
+                testPassed = compareOutputs(runnerResult.stdout, tc.expectedOutput, tc.comparisonMode);
+                if (testPassed) {
+                  marksAwarded = tc.marks;
+                  questionPassedMarks += tc.marks;
+                } else {
+                  executionStatus = 'WRONG_ANSWER';
+                }
               } else {
-                executionStatus = 'WRONG_ANSWER';
+                testPassed = false;
+                errorMessage = runnerResult.error || runnerResult.stderr;
               }
-            } else {
-              testPassed = false;
-              errorMessage = runnerResult.error || runnerResult.stderr;
+            } catch (err: any) {
+              executionStatus = 'INTERNAL_ERROR';
+              errorMessage = err?.message || String(err);
             }
-          } catch (err: any) {
-            executionStatus = 'INTERNAL_ERROR';
-            errorMessage = err?.message || String(err);
           }
 
           await prisma.gradingResult.create({
