@@ -94,7 +94,7 @@ export class ExamService {
       });
 
       return created;
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     await recordAuditEvent({
       actorId: ownerId,
@@ -184,7 +184,7 @@ export class ExamService {
         where: { id: question.id },
         include: { testCases: { orderBy: { position: 'asc' } } },
       });
-    });
+    }, { maxWait: 15000, timeout: 30000 });
   }
 
   /**
@@ -371,7 +371,7 @@ export class ExamService {
       });
 
       return { updatedExam, createdKey };
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     await recordAuditEvent({
       actorId: instructorId,
