@@ -39,6 +39,92 @@ router.get('/exams/:examId/attempts', requireAuth, requireRole(['instructor', 'a
   return res.json({ attempts });
 });
 
+// Comprehensive Real-time Live Exam Monitoring & Cohort Telemetry
+router.get('/exams/:examId/monitoring', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const { examId } = req.params;
+
+  const exam = await prisma.exam.findUnique({
+    where: { id: examId },
+    include: {
+      versions: {
+        orderBy: { versionNumber: 'desc' },
+        take: 1,
+        include: {
+          questions: {
+            select: { id: true, title: true, maxMarks: true, position: true },
+            orderBy: { position: 'asc' },
+          },
+        },
+      },
+    },
+  });
+
+  if (!exam) return res.status(404).json({ error: 'Exam not found' });
+  if (exam.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const currentVersion = exam.versions[0];
+  const questions = currentVersion?.questions || [];
+  const totalQuestions = questions.length;
+  const totalMaxMarks = questions.reduce((sum, q) => sum + (q.maxMarks || 0), 0);
+
+  const attempts = await prisma.examAttempt.findMany({
+    where: { examId },
+    include: {
+      student: { select: { id: true, fullName: true, email: true, avatarUrl: true } },
+      answers: {
+        select: { id: true, questionId: true, answerVersion: true, savedAt: true, sourceCode: true },
+      },
+      events: {
+        select: { id: true, eventType: true, occurredAt: true, durationMs: true, penalty: true, metadata: true },
+        orderBy: { occurredAt: 'desc' },
+      },
+      _count: { select: { answers: true, events: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const activeAttempts = attempts.filter((a) => a.status === 'in_progress');
+  const submittedAttempts = attempts.filter((a) => a.status === 'submitted');
+  const terminatedAttempts = attempts.filter((a) => a.status === 'terminated_suspicious');
+  const expiredAttempts = attempts.filter((a) => a.status === 'expired');
+  const flaggedAttempts = attempts.filter((a) => a.trustScore < 70 || a.status === 'terminated_suspicious');
+
+  const avgTrustScore = attempts.length > 0
+    ? Math.round(attempts.reduce((sum, a) => sum + a.trustScore, 0) / attempts.length)
+    : 100;
+
+  const avgScore = submittedAttempts.length > 0
+    ? Math.round((submittedAttempts.reduce((sum, a) => sum + (a.totalMarksAwarded || 0), 0) / submittedAttempts.length) * 10) / 10
+    : 0;
+
+  return res.json({
+    exam: {
+      id: exam.id,
+      title: exam.title,
+      description: exam.description,
+      durationMinutes: exam.durationMinutes,
+      status: exam.status,
+      currentVersion: currentVersion?.versionNumber || 1,
+      totalQuestions,
+      totalMaxMarks,
+      questions,
+    },
+    summary: {
+      totalCandidates: attempts.length,
+      activeCount: activeAttempts.length,
+      submittedCount: submittedAttempts.length,
+      terminatedCount: terminatedAttempts.length,
+      expiredCount: expiredAttempts.length,
+      flaggedCount: flaggedAttempts.length,
+      averageTrustScore: avgTrustScore,
+      averageScore: avgScore,
+    },
+    attempts,
+  });
+});
+
 // Detailed submission review
 router.get('/attempts/:attemptId/submission', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
   const { attemptId } = req.params;
