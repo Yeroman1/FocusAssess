@@ -125,6 +125,35 @@ router.get('/exams/:examId/monitoring', requireAuth, requireRole(['instructor', 
   });
 });
 
+// Force-terminate a live attempt manually by instructor
+router.post('/attempts/:attemptId/terminate', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
+  const { attemptId } = req.params;
+  const { reason } = req.body;
+
+  const attempt = await prisma.examAttempt.findUnique({
+    where: { id: attemptId },
+    include: { exam: true },
+  });
+
+  if (!attempt) return res.status(404).json({ error: 'Attempt not found' });
+  if (attempt.exam.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const terminated = await prisma.examAttempt.update({
+    where: { id: attemptId },
+    data: {
+      status: 'terminated_suspicious',
+      terminatedAt: new Date(),
+      terminationReason: reason || 'Terminated manually by instructor during live monitoring',
+      trustScore: 0,
+      reviewStatus: 'pending_review',
+    },
+  });
+
+  return res.json({ terminated: true, attempt: terminated });
+});
+
 // Detailed submission review
 router.get('/attempts/:attemptId/submission', requireAuth, requireRole(['instructor', 'admin']), async (req: AuthenticatedRequest, res: Response) => {
   const { attemptId } = req.params;
