@@ -243,6 +243,18 @@ function InstructorDashboardContent() {
                           </button>
                         )}
 
+                        {/* Live Monitoring Radar Button */}
+                        <Link
+                          href={`/instructor/exams/${ex.id}/monitoring`}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold transition-colors flex items-center gap-1.5 border border-emerald-500/20 shadow-xs"
+                          title="Real-time candidate telemetry radar & live proctoring"
+                        >
+                          <span className="material-symbols-outlined text-[16px] text-emerald-600 dark:text-emerald-400">
+                            sensors
+                          </span>
+                          <span>Live Radar</span>
+                        </Link>
+
                         {/* Direct Preview Button - Available anytime for all exams (Draft, Published, Closed) */}
                         <Link
                           href={`/instructor/exams/${ex.id}/preview`}

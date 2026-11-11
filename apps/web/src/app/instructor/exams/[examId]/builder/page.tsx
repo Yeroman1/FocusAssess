@@ -798,6 +798,15 @@ function ExamBuilderContent() {
 
           <div className="flex items-center gap-2">
             <Link
+              href={`/instructor/exams/${examId}/monitoring`}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold transition-colors flex items-center gap-1.5 border border-emerald-500/20 shadow-xs"
+              title="Real-time candidate telemetry monitoring & live proctoring"
+            >
+              <span className="material-symbols-outlined text-[16px]">sensors</span>
+              <span>Live Radar</span>
+            </Link>
+
+            <Link
               href={`/instructor/exams/${examId}/preview`}
               className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-secondary hover:text-primary transition-colors flex items-center gap-1.5 border border-surface-container-high shadow-xs"
               title="Preview the exact student exam sheet anytime"

@@ -300,6 +300,16 @@ function InstructorExamPreviewContent() {
             <span>{showSolutionKey ? 'Rubric Visible' : 'Show Answer Key'}</span>
           </button>
 
+          {/* Live Monitoring Radar */}
+          <Link
+            href={`/instructor/exams/${examId}/monitoring`}
+            className="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold transition-colors flex items-center gap-1 border border-emerald-400/30"
+            title="Open Live Candidate Monitoring Radar"
+          >
+            <span className="material-symbols-outlined text-[15px]">sensors</span>
+            <span className="hidden sm:inline">Live Radar</span>
+          </Link>
+
           {/* Quick return to builder */}
           <Link
             href={`/instructor/exams/${examId}/builder`}
